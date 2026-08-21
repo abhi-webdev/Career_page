@@ -5,6 +5,7 @@ namespace App\Models;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class User extends Authenticatable
 {
@@ -28,13 +29,14 @@ class User extends Authenticatable
             'password' => 'hashed',
         ];
     }
-public function resumes(): HasMany
-{
-    return $this->hasMany(
-        Resume::class,
-        'user_id'
-    );
-}
+
+    public function resumes(): HasMany
+    {
+        return $this->hasMany(
+            Resume::class,
+            'user_id'
+        );
+    }
 
     public function applications(): HasMany
     {
@@ -57,6 +59,14 @@ public function resumes(): HasMany
         return $this->hasMany(
             Offer::class,
             'offered_by'
+        );
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(
+            Employee::class,
+            'user_id'
         );
     }
 }

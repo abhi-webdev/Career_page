@@ -13,21 +13,44 @@ class ApplicationController extends Controller
     /**
      * Display all job applications.
      */
-    public function index()
+    public function index(Request $request)
     {
-        $applications = Application::with([
+        $query = Application::with([
             'user',
             'job',
             'interview',
             'resume',
             'offer'
-        ])
-        ->latest()
-        ->paginate(10);
+        ]);
+
+        if ($request->filled('search')) {
+            $search = $request->search;
+            $query->where(function ($q) use ($search) {
+                $q->whereHas('user', function ($uq) use ($search) {
+                    $uq->where('name', 'like', "%{$search}%")
+                       ->orWhere('email', 'like', "%{$search}%");
+                })
+                ->orWhereHas('job', function ($jq) use ($search) {
+                    $jq->where('title', 'like', "%{$search}%")
+                       ->orWhere('company', 'like', "%{$search}%");
+                });
+            });
+        }
+
+        if ($request->filled('status')) {
+            $query->where('status', $request->status);
+        }
+
+        if ($request->filled('job_id')) {
+            $query->where('job_id', $request->job_id);
+        }
+
+        $applications = $query->latest()->paginate(10)->withQueryString();
+        $jobs = \App\Models\Job::orderBy('title')->get(['id', 'title', 'company']);
 
         return view(
             'admin.applications.index',
-            compact('applications')
+            compact('applications', 'jobs')
         );
     }
 
@@ -56,58 +79,56 @@ class ApplicationController extends Controller
      * Update application status.
      */
     public function updateStatus(
-    Request $request,
-    Application $application
-) {
-    $validated = $request->validate([
-        'status' => [
-            'required',
-            'in:pending,shortlisted,interview,selected,rejected',
-        ],
-    ]);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Update Application Status
-    |--------------------------------------------------------------------------
-    */
-
-    $application->update([
-        'status' => $validated['status'],
-    ]);
-
-
-    /*
-    |--------------------------------------------------------------------------
-    | Notify Candidate When Selected
-    |--------------------------------------------------------------------------
-    */
-
-    if ($validated['status'] === 'selected') {
-
-        $application->load([
-            'user',
-            'job',
+        Request $request,
+        Application $application
+    ) {
+        $validated = $request->validate([
+            'status' => [
+                'required',
+                'in:pending,shortlisted,interview,selected,rejected',
+            ],
         ]);
 
-        $application->user->notify(
-            new ApplicationStatusNotification(
-                'Application Selected',
+        $oldStatus = $application->status;
+        $newStatus = $validated['status'];
 
-                'Congratulations! You have been selected for ' .
-                $application->job->title .
-                '.',
+        /*
+        |--------------------------------------------------------------------------
+        | Update Application Status
+        |--------------------------------------------------------------------------
+        */
 
-                'application'
-            )
+        if ($oldStatus !== $newStatus) {
+            $application->update([
+                'status' => $newStatus,
+            ]);
+
+            /*
+            |--------------------------------------------------------------------------
+            | Notify Candidate When Selected
+            |--------------------------------------------------------------------------
+            */
+
+            if ($newStatus === 'selected') {
+                $application->load([
+                    'user',
+                    'job',
+                ]);
+
+                $application->user->notify(
+                    new ApplicationStatusNotification(
+                        'Application Selected',
+                        'Congratulations! You have been selected for ' .
+                        $application->job->title . '.',
+                        'application'
+                    )
+                );
+            }
+        }
+
+        return back()->with(
+            'success',
+            'Application status updated successfully.'
         );
     }
-
-
-    return back()->with(
-        'success',
-        'Application status updated successfully.'
-    );
-}
 }

@@ -117,7 +117,7 @@ class JobController extends Controller
 
     public function adminIndex()
     {
-        $jobs = Job::latest()->paginate(10);
+        $jobs = Job::withCount('applications')->latest()->paginate(10);
 
         return view('admin.jobs.index', compact('jobs'));
     }

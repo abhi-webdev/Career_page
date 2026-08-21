@@ -1,460 +1,291 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'Update Job')
+@section('title', 'Edit ' . $job->title)
+@section('header_title', 'Job Postings')
 
 @section('content')
 
-<div class="min-h-screen bg-slate-50">
+<div class="max-w-4xl mx-auto space-y-6">
 
-    <div class="border-b border-slate-200 bg-white">
+    {{-- Breadcrumb Header --}}
+    <div class="flex items-center gap-2 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+        <a href="{{ route('admin.jobs.index') }}" class="hover:text-brand-500 transition">
+            Job Openings
+        </a>
+        <span>/</span>
+        <span class="text-[#111111] dark:text-white font-bold">Edit Position</span>
+    </div>
 
-        <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
+    <div>
+        <h1 class="text-2xl font-extrabold tracking-tight text-[#111111] sm:text-3xl dark:text-white">
+            Edit: {{ $job->title }}
+        </h1>
+        <p class="mt-1 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+            Update requirements, dates, or specifications for this job opening.
+        </p>
+    </div>
 
-            <div class="flex items-center gap-2 text-sm text-slate-500">
+    {{-- Validation Errors --}}
+    @if($errors->any())
+        <div class="rounded-xl border border-red-500/20 bg-red-500/10 p-4">
+            <p class="text-xs font-bold text-red-600 dark:text-red-400">Please correct the following errors:</p>
+            <ul class="mt-1 list-disc pl-5 text-xs text-red-600 dark:text-red-400 space-y-0.5">
+                @foreach($errors->all() as $error)
+                    <li>{{ $error }}</li>
+                @endforeach
+            </ul>
+        </div>
+    @endif
 
-                <a
-                    href="{{ route('admin.jobs.index') }}"
-                    class="hover:text-indigo-600"
-                >
-                    Manage Jobs
-                </a>
+    <form method="POST" action="{{ route('admin.jobs.update', $job) }}" class="space-y-6">
+        @csrf
+        @method('PUT')
 
-                <span>/</span>
+        {{-- 1. Basic Information --}}
+        <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                1. Basic Information
+            </h2>
 
-                <span>Update Job</span>
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                {{-- Title --}}
+                <div class="sm:col-span-2">
+                    <label for="title" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Job Title *
+                    </label>
+                    <input
+                        id="title"
+                        name="title"
+                        type="text"
+                        value="{{ old('title', $job->title) }}"
+                        required
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
+                {{-- Company --}}
+                <div>
+                    <label for="company" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Company / Division *
+                    </label>
+                    <input
+                        id="company"
+                        name="company"
+                        type="text"
+                        value="{{ old('company', $job->company) }}"
+                        required
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
+
+                {{-- Location --}}
+                <div>
+                    <label for="location" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Location / Work Mode
+                    </label>
+                    <input
+                        id="location"
+                        name="location"
+                        type="text"
+                        value="{{ old('location', $job->location) }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
+
+                {{-- Job Type --}}
+                <div>
+                    <label for="job_type" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Employment Type
+                    </label>
+                    <select
+                        id="job_type"
+                        name="job_type"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                        <option value="">Select employment type</option>
+                        <option value="Full Time" {{ old('job_type', $job->job_type) === 'Full Time' ? 'selected' : '' }}>Full Time</option>
+                        <option value="Part Time" {{ old('job_type', $job->job_type) === 'Part Time' ? 'selected' : '' }}>Part Time</option>
+                        <option value="Internship" {{ old('job_type', $job->job_type) === 'Internship' ? 'selected' : '' }}>Internship</option>
+                        <option value="Contract" {{ old('job_type', $job->job_type) === 'Contract' ? 'selected' : '' }}>Contract</option>
+                    </select>
+                </div>
+
+                {{-- Experience --}}
+                <div>
+                    <label for="experience" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Experience Range
+                    </label>
+                    <input
+                        id="experience"
+                        name="experience"
+                        type="text"
+                        value="{{ old('experience', $job->experience) }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
             </div>
-
-            <h1 class="mt-3 text-3xl font-bold text-slate-900">
-                Update {{ $job->title }} Job
-            </h1>
-
-            <p class="mt-1 text-sm text-slate-500">
-                Update the details of the job opportunity.
-            </p>
-
         </div>
 
-    </div>
+        {{-- 2. Description & Skills --}}
+        <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                2. Role Description & Skills
+            </h2>
 
-
-    <div class="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-
-        @if($errors->any())
-
-            <div class="mb-6 rounded-xl border border-red-200 bg-red-50 p-4">
-
-                <p class="font-semibold text-red-700">
-                    Please fix the following errors:
-                </p>
-
-                <ul class="mt-2 list-disc pl-5 text-sm text-red-600">
-
-                    @foreach($errors->all() as $error)
-
-                        <li>{{ $error }}</li>
-
-                    @endforeach
-
-                </ul>
-
-            </div>
-
-        @endif
-
-
-        <form
-            method="POST"
-            action="{{ route('admin.jobs.update', $job) }}"
-            class="space-y-6"
-        >
-
-            @csrf
-
-            @method('PUT')
-            {{-- Basic Information --}}
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Basic Information
-                </h2>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Provide the main details about the position.
-                </p>
-
-
-                <div class="mt-6 grid gap-6 md:grid-cols-2">
-
-                    <div class="md:col-span-2">
-
-                        <label
-                            for="title"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Job Title
-                        </label>
-
-                        <input
-                            id="title"
-                            name="title"
-                            type="text"
-                            value="{{ old('title', $job->title) }}"
-                            placeholder="e.g. Backend Developer"
-                            required
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="company"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Company
-                        </label>
-
-                        <input
-                            id="company"
-                            name="company"
-                            type="text"
-                            value="{{ old('company', $job->company) }}"
-                            placeholder="Company name"
-                            required
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="location"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Location
-                        </label>
-
-                        <input
-                            id="location"
-                            name="location"
-                            type="text"
-                            value="{{ old('location', $job->location) }}"
-                            placeholder="e.g. Bhopal"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="job_type"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Job Type
-                        </label>
-
-                        <select
-                            id="job_type"
-                            name="job_type"
-                            class="mt-2 w-full rounded-xl border border-slate-200 bg-white px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                            <option value="">
-                                Select job type
-                            </option>
-
-                            <option value="Full Time">
-                                Full Time
-                            </option>
-
-                            <option value="Part Time">
-                                Part Time
-                            </option>
-
-                            <option value="Internship">
-                                Internship
-                            </option>
-
-                            <option value="Contract">
-                                Contract
-                            </option>
-
-                        </select>
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="experience"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Experience
-                        </label>
-
-                        <input
-                            id="experience"
-                            name="experience"
-                            type="text"
-                            value="{{ old('experience', $job->experience) }}"
-                            placeholder="e.g. 1-3 years"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
+            <div class="mt-5 space-y-4">
+                <div>
+                    <label for="description" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Job Description *
+                    </label>
+                    <textarea
+                        id="description"
+                        name="description"
+                        rows="7"
+                        required
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-3 text-xs leading-relaxed text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >{{ old('description', $job->description) }}</textarea>
                 </div>
 
+                <div>
+                    <label for="skills" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Required Skills (Comma separated)
+                    </label>
+                    <input
+                        id="skills"
+                        name="skills"
+                        type="text"
+                        value="{{ old('skills', is_array($job->skills) ? implode(', ', $job->skills) : $job->skills) }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs font-mono text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
             </div>
+        </div>
 
+        {{-- 3. Application Timeline --}}
+        <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                3. Application Timeline & URL
+            </h2>
 
-            {{-- Description --}}
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Job Description
-                </h2>
-
-                <textarea
-                    name="description"
-                    rows="8"
-                    placeholder="Describe the role, responsibilities and requirements..."
-                    required
-                    class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm leading-6 outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                >{{ old('description', $job->description) }}</textarea>
-
-            </div>
-
-
-            {{-- Skills --}}
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Skills
-                </h2>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    Separate skills using commas.
-                </p>
-
-                <input
-                    name="skills"
-                    type="text"
-                    value="{{ old('skills', is_array($job->skills) ? implode(', ', $job->skills) : $job->skills) }}"
-                    placeholder="PHP, Laravel, MySQL, Git"
-                    class="mt-5 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                >
-
-            </div>
-
-
-            {{-- Application Details --}}
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Application Details
-                </h2>
-
-                <div class="mt-6 space-y-5">
-
-                    <div>
-
-                        <label
-                            for="apply_url"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Application URL
-                        </label>
-
-                        <input
-                            id="apply_url"
-                            name="apply_url"
-                            type="url"
-                            value="{{ old('apply_url', $job->apply_url) }}"
-                            placeholder="https://example.com/apply"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div class="grid gap-5 md:grid-cols-2">
-
-                        <div>
-
-                            <label
-                                for="application_start"
-                                class="text-sm font-medium text-slate-700"
-                            >
-                                Application Start
-                            </label>
-
-                            <input
-                                id="application_start"
-                                name="application_start"
-                                type="datetime-local"
-                                value="{{ old('application_start', $job->application_start) }}"
-                                class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                            >
-
-                        </div>
-
-
-                        <div>
-
-                            <label
-                                for="application_deadline"
-                                class="text-sm font-medium text-slate-700"
-                            >
-                                Application Deadline
-                            </label>
-
-                            <input
-                                id="application_deadline"
-                                name="application_deadline"
-                                type="datetime-local"
-                                value="{{ old('application_deadline', $job->application_deadline) }}"
-                                class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                            >
-
-                        </div>
-
-                    </div>
-
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <div class="sm:col-span-2">
+                    <label for="apply_url" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        External Application URL (Optional)
+                    </label>
+                    <input
+                        id="apply_url"
+                        name="apply_url"
+                        type="url"
+                        value="{{ old('apply_url', $job->apply_url) }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
                 </div>
 
-            </div>
-
-
-            {{-- Interview Schedule --}}
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Interview Schedule
-                </h2>
-
-                <div class="mt-6 grid gap-5 md:grid-cols-2">
-
-                    <div>
-
-                        <label
-                            for="screening_date"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Screening Date
-                        </label>
-
-                        <input
-                            id="screening_date"
-                            name="screening_date"
-                            type="datetime-local"
-                            value="{{ old('screening_date', $job->screening_date) }}"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="interview_start"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Interview Start
-                        </label>
-
-                        <input
-                            id="interview_start"
-                            name="interview_start"
-                            type="datetime-local"
-                            value="{{ old('interview_start', $job->interview_start) }}"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="interview_end"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Interview End
-                        </label>
-
-                        <input
-                            id="interview_end"
-                            name="interview_end"
-                            type="datetime-local"
-                            value="{{ old('interview_end', $job->interview_end) }}"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
-
-                    <div>
-
-                        <label
-                            for="result_date"
-                            class="text-sm font-medium text-slate-700"
-                        >
-                            Result Date
-                        </label>
-
-                        <input
-                            id="result_date"
-                            name="result_date"
-                            type="datetime-local"
-                            value="{{ old('result_date', $job->result_date) }}"
-                            class="mt-2 w-full rounded-xl border border-slate-200 px-4 py-3 text-sm outline-none focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
-                        >
-
-                    </div>
-
+                <div>
+                    <label for="application_start" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Applications Open At
+                    </label>
+                    <input
+                        id="application_start"
+                        name="application_start"
+                        type="datetime-local"
+                        value="{{ old('application_start', $job->application_start ? $job->application_start->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
                 </div>
 
+                <div>
+                    <label for="application_deadline" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Application Deadline
+                    </label>
+                    <input
+                        id="application_deadline"
+                        name="application_deadline"
+                        type="datetime-local"
+                        value="{{ old('application_deadline', $job->application_deadline ? $job->application_deadline->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
             </div>
+        </div>
 
+        {{-- 4. Interview Pipeline Schedule --}}
+        <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                4. Estimated Interview Milestones
+            </h2>
 
-            {{-- Actions --}}
+            <div class="mt-5 grid gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="screening_date" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Screening Date
+                    </label>
+                    <input
+                        id="screening_date"
+                        name="screening_date"
+                        type="datetime-local"
+                        value="{{ old('screening_date', $job->screening_date ? $job->screening_date->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
-            <div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+                <div>
+                    <label for="interview_start" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Interview Rounds Start
+                    </label>
+                    <input
+                        id="interview_start"
+                        name="interview_start"
+                        type="datetime-local"
+                        value="{{ old('interview_start', $job->interview_start ? $job->interview_start->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
-                <a
-                    href="{{ route('admin.jobs.index') }}"
-                    class="rounded-xl border border-slate-200 bg-white px-6 py-3 text-center text-sm font-semibold text-slate-600 hover:bg-slate-50"
-                >
-                    Cancel
-                </a>
+                <div>
+                    <label for="interview_end" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Interview Rounds End
+                    </label>
+                    <input
+                        id="interview_end"
+                        name="interview_end"
+                        type="datetime-local"
+                        value="{{ old('interview_end', $job->interview_end ? $job->interview_end->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
-                <button
-                    type="submit"
-                    class="rounded-xl bg-indigo-600 px-6 py-3 text-sm font-semibold text-white shadow-sm hover:bg-indigo-700"
-                >
-                    Update Job
-                </button>
-
+                <div>
+                    <label for="result_date" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Results Decision Date
+                    </label>
+                    <input
+                        id="result_date"
+                        name="result_date"
+                        type="datetime-local"
+                        value="{{ old('result_date', $job->result_date ? $job->result_date->format('Y-m-d\TH:i') : '') }}"
+                        class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
             </div>
+        </div>
 
-        </form>
-
-    </div>
+        {{-- Actions --}}
+        <div class="flex items-center justify-end gap-3 pt-2">
+            <a
+                href="{{ route('admin.jobs.index') }}"
+                class="rounded-xl border border-[#E5E5E5] bg-white px-5 py-2.5 text-xs font-bold text-[#111111] transition hover:bg-[#F7F7F7] dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+            >
+                Cancel
+            </a>
+            <button
+                type="submit"
+                class="rounded-xl bg-brand-500 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
+            >
+                Update Job Opening →
+            </button>
+        </div>
+    </form>
 
 </div>
 

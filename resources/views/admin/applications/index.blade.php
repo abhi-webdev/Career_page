@@ -1,1282 +1,226 @@
-@extends('layouts.app')
+@extends('layouts.admin')
 
-@section('title', 'My Applications')
+@section('title', 'Candidate Applications (ATS)')
+@section('header_title', 'Applications Pipeline')
 
 @section('content')
 
-<div class="min-h-screen bg-slate-50">
+<div class="space-y-6 max-w-7xl mx-auto">
 
-    <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+    {{-- Page Header --}}
+    <div class="border-b border-[#E5E5E5] pb-6 dark:border-[#262626]">
+        <span class="text-xs font-bold uppercase tracking-wider text-brand-500">
+            ATS Management
+        </span>
+        <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-[#111111] sm:text-3xl dark:text-white">
+            Candidate Applications
+        </h1>
+        <p class="mt-1 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+            Screen candidate CVs, update recruitment stages, and schedule evaluation interviews.
+        </p>
+    </div>
 
-
-        {{-- ========================================================= --}}
-        {{-- HEADER --}}
-        {{-- ========================================================= --}}
-
-        <div>
-
-            <p class="text-sm font-semibold text-indigo-600">
-                Candidate Dashboard
-            </p>
-
-            <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                My Applications
-            </h1>
-
-            <p class="mt-2 text-sm text-slate-500">
-                Track the progress of all your job applications.
-            </p>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- SUCCESS MESSAGE --}}
-        {{-- ========================================================= --}}
-
-        @if(session('success'))
-
-            <div
-                class="mt-6 rounded-xl border border-emerald-200
-                       bg-emerald-50 px-4 py-3
-                       text-sm font-medium text-emerald-700"
-            >
-
-                ✓ {{ session('success') }}
-
-            </div>
-
-        @endif
-
-
-        {{-- ========================================================= --}}
-        {{-- ERROR MESSAGE --}}
-        {{-- ========================================================= --}}
-
-        @if(session('error'))
-
-            <div
-                class="mt-6 rounded-xl border border-red-200
-                       bg-red-50 px-4 py-3
-                       text-sm font-medium text-red-700"
-            >
-
-                {{ session('error') }}
-
-            </div>
-
-        @endif
-
-
-        {{-- ========================================================= --}}
-        {{-- APPLICATION COUNT --}}
-        {{-- ========================================================= --}}
-
-        <div class="mt-8 flex items-center justify-between">
-
-            <div>
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    Your Applications
-                </h2>
-
-                <p class="mt-1 text-sm text-slate-500">
-                    {{ $applications->total() }}
-                    {{ Str::plural('application', $applications->total()) }}
-                </p>
-
-            </div>
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- APPLICATION LIST --}}
-        {{-- ========================================================= --}}
-
-        <div class="mt-6 space-y-5">
-
-            @forelse($applications as $application)
-
-                @php
-
-                    $status = strtolower($application->status);
-
-                    $statusClasses = match($status) {
-
-                        'pending' =>
-                            'border-amber-200 bg-amber-50 text-amber-700',
-
-                        'shortlisted' =>
-                            'border-blue-200 bg-blue-50 text-blue-700',
-
-                        'interview' =>
-                            'border-violet-200 bg-violet-50 text-violet-700',
-
-                        'selected' =>
-                            'border-emerald-200 bg-emerald-50 text-emerald-700',
-
-                        'rejected' =>
-                            'border-red-200 bg-red-50 text-red-700',
-
-                        default =>
-                            'border-slate-200 bg-slate-50 text-slate-700',
-
-                    };
-
-
-                    $progress = match($status) {
-
-                        'pending' => 25,
-
-                        'shortlisted' => 50,
-
-                        'interview' => 75,
-
-                        'selected' => 100,
-
-                        'rejected' => 100,
-
-                        default => 25,
-
-                    };
-
-                @endphp
-
-
-                {{-- ================================================= --}}
-                {{-- APPLICATION CARD --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="overflow-hidden rounded-2xl border border-slate-200
-                           bg-white shadow-sm transition
-                           hover:border-indigo-200 hover:shadow-md"
+    {{-- Filters & Search Card --}}
+    <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+        <form method="GET" action="{{ route('admin.applications.index') }}" class="grid gap-3 sm:grid-cols-2 lg:grid-cols-12">
+            
+            {{-- Search Bar --}}
+            <div class="relative sm:col-span-2 lg:col-span-4">
+                <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                    🔍
+                </span>
+                <input
+                    type="text"
+                    name="search"
+                    value="{{ request('search') }}"
+                    placeholder="Candidate name, email, or role..."
+                    class="w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] py-2.5 pl-10 pr-4 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
                 >
+            </div>
 
-                    <div class="p-6">
+            {{-- Status Filter --}}
+            <div class="lg:col-span-3">
+                <select
+                    name="status"
+                    class="w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                >
+                    <option value="">All Statuses</option>
+                    <option value="pending" {{ request('status') === 'pending' ? 'selected' : '' }}>Pending</option>
+                    <option value="shortlisted" {{ request('status') === 'shortlisted' ? 'selected' : '' }}>Shortlisted</option>
+                    <option value="interview" {{ request('status') === 'interview' ? 'selected' : '' }}>Interview</option>
+                    <option value="selected" {{ request('status') === 'selected' ? 'selected' : '' }}>Selected</option>
+                    <option value="rejected" {{ request('status') === 'rejected' ? 'selected' : '' }}>Rejected</option>
+                </select>
+            </div>
 
+            {{-- Job Filter --}}
+            <div class="lg:col-span-3">
+                <select
+                    name="job_id"
+                    class="w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                >
+                    <option value="">All Job Openings</option>
+                    @foreach($jobs as $job)
+                        <option value="{{ $job->id }}" {{ request('job_id') == $job->id ? 'selected' : '' }}>
+                            {{ $job->title }} ({{ $job->company }})
+                        </option>
+                    @endforeach
+                </select>
+            </div>
 
-                        {{-- ================================================= --}}
-                        {{-- TOP --}}
-                        {{-- ================================================= --}}
+            {{-- Filter Actions --}}
+            <div class="flex gap-2 lg:col-span-2">
+                <button
+                    type="submit"
+                    class="w-full rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
+                >
+                    Filter
+                </button>
+                @if(request()->hasAny(['search', 'status', 'job_id']))
+                    <a
+                        href="{{ route('admin.applications.index') }}"
+                        class="flex items-center justify-center rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-3 py-2.5 text-xs font-bold text-[#111111] transition hover:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                        title="Clear filters"
+                    >
+                        ✕
+                    </a>
+                @endif
+            </div>
+        </form>
+    </div>
 
-                        <div
-                            class="flex flex-col gap-5
-                                   sm:flex-row sm:items-start
-                                   sm:justify-between"
-                        >
+    {{-- Applications Table --}}
+    <div class="overflow-hidden rounded-2xl border border-[#E5E5E5] bg-white shadow-xs dark:border-[#262626] dark:bg-[#141414]">
+        <div class="border-b border-[#E5E5E5] px-6 py-4 dark:border-[#262626]">
+            <div class="flex items-center justify-between">
+                <h2 class="text-sm font-bold text-[#111111] dark:text-white">
+                    Applications Feed ({{ $applications->total() }})
+                </h2>
+                <p class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+                    Showing {{ $applications->firstItem() ?? 0 }} - {{ $applications->lastItem() ?? 0 }} of {{ $applications->total() }}
+                </p>
+            </div>
+        </div>
 
-                            <div class="flex gap-4">
+        @if($applications->count() > 0)
+            <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs text-[#111111] dark:text-white">
+                    <thead class="bg-[#F7F7F7] text-[10px] font-bold uppercase tracking-wider text-[#6B6B6B] dark:bg-[#1A1A1A] dark:text-[#A1A1A1]">
+                        <tr>
+                            <th class="px-6 py-3.5">Candidate</th>
+                            <th class="px-6 py-3.5">Applied Position</th>
+                            <th class="px-6 py-3.5">Resume / CV</th>
+                            <th class="px-6 py-3.5">Current Stage</th>
+                            <th class="px-6 py-3.5">Applied Date</th>
+                            <th class="px-6 py-3.5 text-right">Action</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-[#E5E5E5] font-medium dark:divide-[#262626]">
+                        @foreach($applications as $application)
+                            @php
+                                $status = strtolower($application->status);
+                                $statusBadge = match($status) {
+                                    'pending' => 'bg-amber-500/10 text-amber-500 border-amber-500/20',
+                                    'shortlisted' => 'bg-blue-500/10 text-blue-500 border-blue-500/20',
+                                    'interview' => 'bg-brand-500/10 text-brand-500 border-brand-500/20',
+                                    'selected' => 'bg-emerald-500/10 text-emerald-500 border-emerald-500/20',
+                                    'rejected' => 'bg-red-500/10 text-red-500 border-red-500/20',
+                                    default => 'bg-slate-500/10 text-slate-500 border-slate-500/20',
+                                };
+                            @endphp
+                            <tr class="transition hover:bg-[#F7F7F7] dark:hover:bg-[#1A1A1A]">
+                                {{-- Candidate Bio --}}
+                                <td class="px-6 py-4">
+                                    <div class="flex items-center gap-3">
+                                        <div class="flex h-8 w-8 shrink-0 items-center justify-center rounded-xl bg-brand-500/10 font-bold text-brand-500 dark:bg-brand-500/20">
+                                            {{ strtoupper(substr($application->user->name, 0, 1)) }}
+                                        </div>
+                                        <div>
+                                            <a href="{{ route('admin.applications.show', $application) }}" class="font-bold text-[#111111] hover:text-brand-500 dark:text-white transition">
+                                                {{ $application->user->name }}
+                                            </a>
+                                            <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                                {{ $application->user->email }}
+                                            </p>
+                                        </div>
+                                    </div>
+                                </td>
 
-
-                                {{-- Company Icon --}}
-                                <div
-                                    class="flex h-12 w-12 shrink-0
-                                           items-center justify-center
-                                           rounded-xl bg-indigo-50
-                                           text-lg font-bold text-indigo-600"
-                                >
-                                    {{ strtoupper(substr($application->job->company, 0, 1)) }}
-                                </div>
-
-
-                                {{-- Job Information --}}
-                                <div>
-
-                                    <h3
-                                        class="text-lg font-bold text-slate-900"
-                                    >
+                                {{-- Job Title --}}
+                                <td class="px-6 py-4">
+                                    <p class="font-semibold text-[#111111] dark:text-white">
                                         {{ $application->job->title }}
-                                    </h3>
-
-                                    <p
-                                        class="mt-1 text-sm font-medium
-                                               text-slate-600"
-                                    >
+                                    </p>
+                                    <p class="text-[11px] text-brand-500 font-semibold">
                                         {{ $application->job->company }}
                                     </p>
+                                </td>
 
-                                    <div
-                                        class="mt-3 flex flex-wrap gap-x-4
-                                               gap-y-2 text-xs text-slate-500"
-                                    >
-
-                                        <span>
-                                            📍 {{ $application->job->location }}
+                                {{-- Resume --}}
+                                <td class="px-6 py-4">
+                                    @if($application->resume)
+                                        <a
+                                            href="{{ asset('storage/' . $application->resume->file_path) }}"
+                                            target="_blank"
+                                            class="inline-flex items-center gap-1 font-bold text-brand-500 hover:text-brand-600 transition"
+                                        >
+                                            <span>📄</span>
+                                            <span>View Resume</span>
+                                        </a>
+                                    @else
+                                        <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                            No file
                                         </span>
+                                    @endif
+                                </td>
 
-                                        @if($application->job->job_type)
+                                {{-- Status Pill --}}
+                                <td class="px-6 py-4">
+                                    <span class="inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold capitalize {{ $statusBadge }}">
+                                        {{ $application->status }}
+                                    </span>
+                                </td>
 
-                                            <span>
-                                                💼 {{ $application->job->job_type }}
-                                            </span>
-
-                                        @endif
-
-                                        @if($application->job->experience)
-
-                                            <span>
-                                                🎯 {{ $application->job->experience }}
-                                            </span>
-
-                                        @endif
-
-                                    </div>
-
-                                </div>
-
-                            </div>
-
-
-                            {{-- Status --}}
-                            <div>
-
-                                <span
-                                    class="inline-flex rounded-full border
-                                           px-3 py-1.5 text-xs
-                                           font-semibold capitalize
-                                           {{ $statusClasses }}"
-                                >
-                                    {{ $application->status }}
-                                </span>
-
-                            </div>
-
-                        </div>
-
-
-                        {{-- ================================================= --}}
-                        {{-- APPLICATION DATE --}}
-                        {{-- ================================================= --}}
-
-                        <div
-                            class="mt-6 flex flex-wrap items-center
-                                   justify-between gap-3
-                                   border-t border-slate-100 pt-5"
-                        >
-
-                            <p class="text-xs text-slate-500">
-
-                                Applied on
-
-                                <span class="font-semibold text-slate-700">
-
+                                {{-- Applied Date --}}
+                                <td class="px-6 py-4 text-[#6B6B6B] dark:text-[#A1A1A1]">
                                     {{ $application->created_at->format('d M Y') }}
+                                </td>
 
-                                </span>
-
-                            </p>
-
-
-                            <a
-                                href="{{ route('jobs.show', $application->job) }}"
-                                class="text-sm font-semibold text-indigo-600
-                                       transition hover:text-indigo-700"
-                            >
-                                View Job →
-                            </a>
-
-                        </div>
-
-
-                        {{-- ================================================= --}}
-                        {{-- APPLICATION PROGRESS --}}
-                        {{-- ================================================= --}}
-
-                        <div class="mt-6 border-t border-slate-100 pt-6">
-
-                            <div
-                                class="flex items-center justify-between"
-                            >
-
-                                <p
-                                    class="text-xs font-semibold uppercase
-                                           tracking-wide text-slate-400"
-                                >
-                                    Application Progress
-                                </p>
-
-                                <p
-                                    class="text-xs font-semibold
-                                           text-slate-500"
-                                >
-                                    {{ $progress }}%
-                                </p>
-
-                            </div>
-
-
-                            {{-- Progress Bar --}}
-
-                            <div
-                                class="mt-3 h-2 overflow-hidden rounded-full
-                                       bg-slate-100"
-                            >
-
-                                <div
-                                    class="h-full rounded-full
-                                           transition-all
-                                           {{ $status === 'rejected'
-                                                ? 'bg-red-500'
-                                                : 'bg-indigo-600' }}"
-                                    style="width: {{ $progress }}%"
-                                ></div>
-
-                            </div>
-
-
-                            {{-- Steps --}}
-
-                            @if($status !== 'rejected')
-
-                                <div
-                                    class="mt-5 grid grid-cols-4"
-                                >
-
-                                    {{-- Applied --}}
-
-                                    <div class="text-left">
-
-                                        <div
-                                            class="flex h-7 w-7
-                                                   items-center justify-center
-                                                   rounded-full
-                                                   bg-indigo-600
-                                                   text-xs font-bold
-                                                   text-white"
-                                        >
-                                            ✓
-                                        </div>
-
-                                        <p
-                                            class="mt-2 text-xs
-                                                   font-medium text-slate-600"
-                                        >
-                                            Applied
-                                        </p>
-
-                                    </div>
-
-
-                                    {{-- Shortlisted --}}
-
-                                    <div class="text-center">
-
-                                        <div
-                                            class="mx-auto flex h-7 w-7
-                                                   items-center justify-center
-                                                   rounded-full
-                                                   {{ in_array($status, [
-                                                        'shortlisted',
-                                                        'interview',
-                                                        'selected'
-                                                   ])
-                                                        ? 'bg-indigo-600 text-white'
-                                                        : 'bg-slate-200 text-slate-400' }}"
-                                        >
-                                            2
-                                        </div>
-
-                                        <p
-                                            class="mt-2 text-xs
-                                                   font-medium
-                                                   text-slate-600"
-                                        >
-                                            Shortlisted
-                                        </p>
-
-                                    </div>
-
-
-                                    {{-- Interview --}}
-
-                                    <div class="text-center">
-
-                                        <div
-                                            class="mx-auto flex h-7 w-7
-                                                   items-center justify-center
-                                                   rounded-full
-                                                   {{ in_array($status, [
-                                                        'interview',
-                                                        'selected'
-                                                   ])
-                                                        ? 'bg-indigo-600 text-white'
-                                                        : 'bg-slate-200 text-slate-400' }}"
-                                        >
-                                            3
-                                        </div>
-
-                                        <p
-                                            class="mt-2 text-xs
-                                                   font-medium
-                                                   text-slate-600"
-                                        >
-                                            Interview
-                                        </p>
-
-                                    </div>
-
-
-                                    {{-- Selected --}}
-
-                                    <div class="text-right">
-
-                                        <div
-                                            class="ml-auto flex h-7 w-7
-                                                   items-center justify-center
-                                                   rounded-full
-                                                   {{ $status === 'selected'
-                                                        ? 'bg-emerald-600 text-white'
-                                                        : 'bg-slate-200 text-slate-400' }}"
-                                        >
-                                            4
-                                        </div>
-
-                                        <p
-                                            class="mt-2 text-xs
-                                                   font-medium
-                                                   text-slate-600"
-                                        >
-                                            Selected
-                                        </p>
-
-                                    </div>
-
-                                </div>
-
-                            @else
-
-                                {{-- Rejected --}}
-
-                                <div
-                                    class="mt-5 rounded-xl border
-                                           border-red-200 bg-red-50 p-4"
-                                >
-
-                                    <p
-                                        class="text-sm font-semibold
-                                               text-red-700"
+                                {{-- Action Link --}}
+                                <td class="px-6 py-4 text-right">
+                                    <a
+                                        href="{{ route('admin.applications.show', $application) }}"
+                                        class="inline-flex items-center gap-1 rounded-lg bg-[#111111] px-3 py-1.5 text-xs font-bold text-white transition hover:bg-brand-500 dark:bg-white dark:text-[#111111] dark:hover:bg-brand-500 dark:hover:text-white"
                                     >
-                                        Application Rejected
-                                    </p>
-
-                                    <p
-                                        class="mt-1 text-xs
-                                               text-red-600"
-                                    >
-                                        Unfortunately, your application
-                                        was not selected for this position.
-                                    </p>
-
-                                </div>
-
-                            @endif
-
-                        </div>
-
-                        {{-- ========================================================= --}}
-{{-- INTERVIEW --}}
-{{-- ========================================================= --}}
-
-@if($application->interview)
-
-    @php
-
-        $interview = $application->interview;
-
-        $interviewStatus = strtolower($interview->status);
-
-    @endphp
-
-
-    <div class="border-t border-slate-100 px-6 py-6">
-
-        <div
-            class="rounded-2xl border p-5
-            {{
-                $interviewStatus === 'cancelled'
-                    ? 'border-red-200 bg-red-50'
-                    : (
-                        $interviewStatus === 'completed'
-                            ? 'border-emerald-200 bg-emerald-50'
-                            : 'border-indigo-200 bg-indigo-50'
-                    )
-            }}"
-        >
-
-            {{-- ================================================= --}}
-            {{-- HEADER --}}
-            {{-- ================================================= --}}
-
-            <div
-                class="flex flex-col gap-4
-                       sm:flex-row sm:items-start
-                       sm:justify-between"
-            >
-
-                <div>
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-slate-500"
-                    >
-                        Interview
-                    </p>
-
-                    <h3
-                        class="mt-1 text-lg font-bold text-slate-900"
-                    >
-                        {{ $application->job->title }}
-                    </h3>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Interview for
-                        {{ $application->job->company }}
-                    </p>
-
-                </div>
-
-
-                {{-- Interview Status --}}
-
-                <span
-                    class="inline-flex w-fit rounded-full border
-                           px-3 py-1.5 text-xs font-semibold
-                           capitalize
-
-                           {{
-                                $interviewStatus === 'scheduled'
-                                    ? 'border-blue-200 bg-blue-50 text-blue-700'
-                                    : (
-                                        $interviewStatus === 'completed'
-                                            ? 'border-emerald-200 bg-emerald-50 text-emerald-700'
-                                            : 'border-red-200 bg-red-50 text-red-700'
-                                    )
-                           }}"
-                >
-                    {{ $interview->status }}
-                </span>
-
+                                        <span>Review</span>
+                                        <span>→</span>
+                                    </a>
+                                </td>
+                            </tr>
+                        @endforeach
+                    </tbody>
+                </table>
             </div>
 
-
-            {{-- ================================================= --}}
-            {{-- CANCELLED --}}
-            {{-- ================================================= --}}
-
-            @if($interviewStatus === 'cancelled')
-
-                <div
-                    class="mt-5 rounded-xl border
-                           border-red-200 bg-white/70 p-4"
-                >
-
-                    <p
-                        class="text-sm font-semibold text-red-700"
-                    >
-                        Interview Cancelled
-                    </p>
-
-                    <p
-                        class="mt-1 text-xs text-red-600"
-                    >
-                        This interview has been cancelled.
-                        Please wait for further communication.
-                    </p>
-
-                </div>
-
-
-            @else
-
-                {{-- ================================================= --}}
-                {{-- DATE & TIME --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="mt-5 grid gap-3 sm:grid-cols-3"
-                >
-
-                    {{-- Date --}}
-
-                    <div
-                        class="rounded-xl bg-white/80 p-4"
-                    >
-
-                        <p
-                            class="text-xs font-semibold uppercase
-                                   tracking-wide text-slate-400"
-                        >
-                            Date
-                        </p>
-
-                        <p
-                            class="mt-1 text-sm font-semibold
-                                   text-slate-800"
-                        >
-                            {{ $interview->interview_date
-                                ? $interview->interview_date->format('d M Y')
-                                : 'Not scheduled' }}
-                        </p>
-
-                    </div>
-
-
-                    {{-- Start Time --}}
-
-                    <div
-                        class="rounded-xl bg-white/80 p-4"
-                    >
-
-                        <p
-                            class="text-xs font-semibold uppercase
-                                   tracking-wide text-slate-400"
-                        >
-                            Start Time
-                        </p>
-
-                        <p
-                            class="mt-1 text-sm font-semibold
-                                   text-slate-800"
-                        >
-
-                            @if($interview->start_time)
-
-                                {{ \Carbon\Carbon::parse($interview->start_time)->format('h:i A') }}
-
-                            @else
-
-                                Not scheduled
-
-                            @endif
-
-                        </p>
-
-                    </div>
-
-
-                    {{-- End Time --}}
-
-                    <div
-                        class="rounded-xl bg-white/80 p-4"
-                    >
-
-                        <p
-                            class="text-xs font-semibold uppercase
-                                   tracking-wide text-slate-400"
-                        >
-                            End Time
-                        </p>
-
-                        <p
-                            class="mt-1 text-sm font-semibold
-                                   text-slate-800"
-                        >
-
-                            @if($interview->end_time)
-
-                                {{ \Carbon\Carbon::parse($interview->end_time)->format('h:i A') }}
-
-                            @else
-
-                                Not scheduled
-
-                            @endif
-
-                        </p>
-
-                    </div>
-
-                </div>
-
-
-                {{-- ================================================= --}}
-                {{-- MEETING LINK --}}
-                {{-- ================================================= --}}
-
-                @if(
-                    $interviewStatus === 'scheduled' &&
-                    $interview->meeting_link
-                )
-
-                    <div class="mt-5">
-
-                        <a
-                            href="{{ $interview->meeting_link }}"
-                            target="_blank"
-                            rel="noopener noreferrer"
-                            class="inline-flex w-full items-center
-                                   justify-center gap-2 rounded-xl
-                                   bg-indigo-600 px-5 py-3
-                                   text-sm font-semibold text-white
-                                   shadow-sm transition
-                                   hover:bg-indigo-700
-                                   sm:w-auto"
-                        >
-
-                            <span>
-                                🎥
-                            </span>
-
-                            Join Google Meet
-
-                        </a>
-
-                    </div>
-
-                @endif
-
-
-                {{-- ================================================= --}}
-                {{-- INTERVIEW NOTES --}}
-                {{-- ================================================= --}}
-
-                @if($interview->notes)
-
-                    <div
-                        class="mt-5 rounded-xl
-                               border border-slate-200
-                               bg-white/70 p-4"
-                    >
-
-                        <p
-                            class="text-xs font-semibold uppercase
-                                   tracking-wide text-slate-400"
-                        >
-                            Interview Notes
-                        </p>
-
-                        <p
-                            class="mt-2 text-sm leading-6
-                                   text-slate-600"
-                        >
-                            {{ $interview->notes }}
-                        </p>
-
-                    </div>
-
-                @endif
-
-
-                {{-- ================================================= --}}
-                {{-- COMPLETED --}}
-                {{-- ================================================= --}}
-
-                @if($interviewStatus === 'completed')
-
-                    <div
-                        class="mt-5 rounded-xl border
-                               border-emerald-200
-                               bg-white/70 p-4"
-                    >
-
-                        <p
-                            class="text-sm font-semibold
-                                   text-emerald-700"
-                        >
-                            ✓ Interview Completed
-                        </p>
-
-                        <p
-                            class="mt-1 text-xs text-slate-500"
-                        >
-                            Your interview has been completed.
-                        </p>
-
-                    </div>
-
-                @endif
-
-            @endif
-
-        </div>
-
-    </div>
-
-@endif
-
-
-{{-- ========================================================= --}}
-{{-- OFFER --}}
-{{-- ========================================================= --}}
-
-@if(
-    $application->offer &&
-    in_array($application->offer->status, [
-        'sent',
-        'accepted',
-        'declined'
-    ])
-)
-
-    <div class="border-t border-slate-100 px-6 py-6">
-
-        <div
-            class="rounded-2xl border border-emerald-200
-                   bg-gradient-to-br from-emerald-50
-                   via-white to-indigo-50 p-6"
-        >
-
-            {{-- Header --}}
-
-            <div
-                class="flex flex-col gap-4
-                       sm:flex-row sm:items-start
-                       sm:justify-between"
-            >
-
-                <div>
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-emerald-600"
-                    >
-                        Employment Offer
-                    </p>
-
-                    <h3
-                        class="mt-1 text-xl font-bold text-slate-900"
-                    >
-                        Congratulations!
-                    </h3>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        You have received an offer from
-                        {{ $application->job->company }}.
-                    </p>
-
-                </div>
-
-
-                {{-- Status Badge --}}
-
-                @if($application->offer->status === 'sent')
-
-                    <span
-                        class="inline-flex w-fit rounded-full
-                               border border-blue-200
-                               bg-blue-50 px-3 py-1.5
-                               text-xs font-semibold
-                               text-blue-700"
-                    >
-                        Awaiting Response
-                    </span>
-
-                @elseif($application->offer->status === 'accepted')
-
-                    <span
-                        class="inline-flex w-fit rounded-full
-                               border border-emerald-200
-                               bg-emerald-50 px-3 py-1.5
-                               text-xs font-semibold
-                               text-emerald-700"
-                    >
-                        ✓ Accepted
-                    </span>
-
-                @elseif($application->offer->status === 'declined')
-
-                    <span
-                        class="inline-flex w-fit rounded-full
-                               border border-red-200
-                               bg-red-50 px-3 py-1.5
-                               text-xs font-semibold
-                               text-red-700"
-                    >
-                        Declined
-                    </span>
-
-                @endif
-
-            </div>
-
-
-            {{-- Offer Details --}}
-
-            <div
-                class="mt-6 grid gap-4
-                       sm:grid-cols-2 lg:grid-cols-3"
-            >
-
-                <div class="rounded-xl bg-white p-4">
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-slate-400"
-                    >
-                        Position
-                    </p>
-
-                    <p
-                        class="mt-1 text-sm font-semibold
-                               text-slate-800"
-                    >
-                        {{ $application->job->title }}
-                    </p>
-
-                </div>
-
-
-                <div class="rounded-xl bg-white p-4">
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-slate-400"
-                    >
-                        Salary
-                    </p>
-
-                    <p
-                        class="mt-1 text-lg font-bold text-slate-900"
-                    >
-                        ₹{{ number_format($application->offer->salary, 2) }}
-                    </p>
-
-                </div>
-
-
-                <div class="rounded-xl bg-white p-4">
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-slate-400"
-                    >
-                        Joining Date
-                    </p>
-
-                    <p
-                        class="mt-1 text-sm font-semibold
-                               text-slate-800"
-                    >
-                        {{ \Carbon\Carbon::parse($application->offer->joining_date)->format('d M Y') }}
-                    </p>
-
-                </div>
-
-
-                @if($application->offer->offer_expiry_date)
-
-                    <div class="rounded-xl bg-white p-4">
-
-                        <p
-                            class="text-xs font-semibold uppercase
-                                   tracking-wide text-slate-400"
-                        >
-                            Offer Valid Until
-                        </p>
-
-                        <p
-                            class="mt-1 text-sm font-semibold
-                                   text-slate-800"
-                        >
-                            {{ \Carbon\Carbon::parse($application->offer->offer_expiry_date)->format('d M Y') }}
-                        </p>
-
-                    </div>
-
-                @endif
-
-            </div>
-
-
-            {{-- Notes --}}
-
-            @if($application->offer->notes)
-
-                <div
-                    class="mt-5 rounded-xl
-                           border border-slate-100
-                           bg-white p-4"
-                >
-
-                    <p
-                        class="text-xs font-semibold uppercase
-                               tracking-wide text-slate-400"
-                    >
-                        Additional Information
-                    </p>
-
-                    <p
-                        class="mt-2 text-sm leading-6 text-slate-600"
-                    >
-                        {{ $application->offer->notes }}
-                    </p>
-
-                </div>
-
-            @endif
-
-
-            {{-- PDF --}}
-
-            @if($application->offer->offer_letter_path)
-
-                <div class="mt-5 flex flex-col gap-3 sm:flex-row">
-
-                    <a
-                        href="{{ asset(
-                            'storage/' .
-                            $application->offer->offer_letter_path
-                        ) }}"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        class="inline-flex flex-1
-                               items-center justify-center
-                               rounded-xl bg-indigo-600
-                               px-5 py-3 text-sm
-                               font-semibold text-white
-                               transition hover:bg-indigo-700"
-                    >
-                        View Offer Letter
-                    </a>
-
-
-                    <a
-                        href="{{ asset(
-                            'storage/' .
-                            $application->offer->offer_letter_path
-                        ) }}"
-                        download
-                        class="inline-flex flex-1
-                               items-center justify-center
-                               rounded-xl border
-                               border-slate-200 bg-white
-                               px-5 py-3 text-sm
-                               font-semibold text-slate-700
-                               transition hover:bg-slate-50"
-                    >
-                        Download PDF
-                    </a>
-
-                </div>
-
-            @endif
-
-
-            {{-- ================================================= --}}
-            {{-- ACCEPT / DECLINE --}}
-            {{-- ================================================= --}}
-
-            @if($application->offer->status === 'sent')
-
-                <div
-                    class="mt-6 border-t border-slate-200
-                           pt-6"
-                >
-
-                    <p
-                        class="text-sm font-semibold
-                               text-slate-900"
-                    >
-                        Respond to this offer
-                    </p>
-
-                    <p
-                        class="mt-1 text-xs text-slate-500"
-                    >
-                        Please review the offer before making
-                        your decision.
-                    </p>
-
-
-                    <div
-                        class="mt-4 flex flex-col gap-3
-                               sm:flex-row"
-                    >
-
-                        {{-- Accept --}}
-
-                        <form
-                            method="POST"
-                            action="{{ route(
-                                'applications.offer.accept',
-                                $application
-                            ) }}"
-                            class="flex-1"
-                        >
-
-                            @csrf
-
-                            <button
-                                type="submit"
-                                onclick="return confirm(
-                                    'Are you sure you want to accept this offer?'
-                                )"
-                                class="w-full rounded-xl
-                                       bg-emerald-600 px-5 py-3
-                                       text-sm font-semibold
-                                       text-white transition
-                                       hover:bg-emerald-700"
-                            >
-                                Accept Offer
-                            </button>
-
-                        </form>
-
-
-                        {{-- Decline --}}
-
-                        <form
-                            method="POST"
-                            action="{{ route(
-                                'applications.offer.decline',
-                                $application
-                            ) }}"
-                            class="flex-1"
-                        >
-
-                            @csrf
-
-                            <button
-                                type="submit"
-                                onclick="return confirm(
-                                    'Are you sure you want to decline this offer?'
-                                )"
-                                class="w-full rounded-xl
-                                       border border-red-200
-                                       bg-white px-5 py-3
-                                       text-sm font-semibold
-                                       text-red-600 transition
-                                       hover:bg-red-50"
-                            >
-                                Decline Offer
-                            </button>
-
-                        </form>
-
-                    </div>
-
-                </div>
-
-            @elseif($application->offer->status === 'accepted')
-
-                <div
-                    class="mt-6 rounded-xl
-                           border border-emerald-200
-                           bg-emerald-50 p-4"
-                >
-
-                    <p
-                        class="text-sm font-semibold
-                               text-emerald-800"
-                    >
-                        ✓ Offer Accepted
-                    </p>
-
-                    <p
-                        class="mt-1 text-xs text-emerald-700"
-                    >
-                        Congratulations! You have accepted
-                        this employment offer.
-                    </p>
-
-                </div>
-
-            @elseif($application->offer->status === 'declined')
-
-                <div
-                    class="mt-6 rounded-xl
-                           border border-red-200
-                           bg-red-50 p-4"
-                >
-
-                    <p
-                        class="text-sm font-semibold
-                               text-red-800"
-                    >
-                        Offer Declined
-                    </p>
-
-                    <p
-                        class="mt-1 text-xs text-red-700"
-                    >
-                        You have declined this employment offer.
-                    </p>
-
-                </div>
-
-            @endif
-
-        </div>
-
-    </div>
-
-@endif
-
-                    </div>
-
-                </div>
-
-            @empty
-
-
-                {{-- ================================================= --}}
-                {{-- EMPTY STATE --}}
-                {{-- ================================================= --}}
-
-                <div
-                    class="rounded-2xl border border-slate-200
-                           bg-white px-6 py-16 text-center shadow-sm"
-                >
-
-                    <div
-                        class="mx-auto flex h-16 w-16
-                               items-center justify-center
-                               rounded-2xl bg-indigo-50
-                               text-2xl"
-                    >
-                        💼
-                    </div>
-
-                    <h3
-                        class="mt-5 text-lg font-semibold text-slate-900"
-                    >
-                        No applications yet
-                    </h3>
-
-                    <p
-                        class="mx-auto mt-2 max-w-md text-sm
-                               text-slate-500"
-                    >
-                        You haven't applied for any jobs yet.
-                        Explore available opportunities and start
-                        your career journey.
-                    </p>
-
-                    <a
-                        href="{{ route('jobs.index') }}"
-                        class="mt-6 inline-flex rounded-xl
-                               bg-indigo-600 px-5 py-3
-                               text-sm font-semibold text-white
-                               shadow-sm transition
-                               hover:bg-indigo-700"
-                    >
-                        Explore Jobs
-                    </a>
-
-                </div>
-
-            @endforelse
-
-        </div>
-
-
-        {{-- ========================================================= --}}
-        {{-- PAGINATION --}}
-        {{-- ========================================================= --}}
-
-        @if($applications->hasPages())
-
-            <div class="mt-8">
-
+            {{-- Pagination --}}
+            <div class="border-t border-[#E5E5E5] px-6 py-4 dark:border-[#262626]">
                 {{ $applications->links() }}
-
             </div>
-
+        @else
+            <div class="p-16 text-center">
+                <span class="text-4xl">👥</span>
+                <h3 class="mt-4 text-sm font-bold text-[#111111] dark:text-white">
+                    No applications found
+                </h3>
+                <p class="mt-1 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+                    @if(request()->hasAny(['search', 'status', 'job_id']))
+                        No candidates match your current search criteria.
+                    @else
+                        No candidates have applied yet.
+                    @endif
+                </p>
+            </div>
         @endif
-
-
     </div>
 
 </div>

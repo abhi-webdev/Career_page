@@ -4,7 +4,6 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
-
 use Illuminate\Database\Eloquent\Relations\HasOne;
 
 class Application extends Model
@@ -42,18 +41,26 @@ class Application extends Model
     }
 
     public function interview(): HasOne
-{
-    return $this->hasOne(
-        Interview::class,
-        'application_id'
-    );
-}
+    {
+        return $this->hasOne(
+            Interview::class,
+            'application_id'
+        );
+    }
 
-public function offer(): HasOne
-{
-    return $this->hasOne(
-        Offer::class,
-        'application_id'
-    );
-}
+    public function offer(): HasOne
+    {
+        return $this->hasOne(
+            Offer::class,
+            'application_id'
+        );
+    }
+
+    public function employee(): HasOne
+    {
+        return $this->hasOne(
+            Employee::class,
+            'application_id'
+        );
+    }
 }

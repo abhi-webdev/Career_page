@@ -3,20 +3,31 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
-
 use App\Http\Controllers\AdminController;
+use App\Http\Controllers\JobController;
 use App\Http\Controllers\ApplicationController;
 use App\Http\Controllers\Admin\ApplicationController as AdminApplicationController;
-
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\OfferController;
-
+use App\Http\Controllers\Admin\EmployeeController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 
+/*
+|--------------------------------------------------------------------------
+| Public Routes
+|--------------------------------------------------------------------------
+*/
+
 Route::get('/', function () {
-    return redirect()->route('login');
+    return redirect()->route('jobs.index');
 });
+
+Route::get('/jobs', [JobController::class, 'index'])
+    ->name('jobs.index');
+
+Route::get('/jobs/{job}', [JobController::class, 'show'])
+    ->name('jobs.show');
 
 /*
 |--------------------------------------------------------------------------
@@ -25,7 +36,6 @@ Route::get('/', function () {
 */
 
 Route::middleware('guest')->group(function () {
-
     Route::get('/register', [AuthController::class, 'showRegister'])
         ->name('register');
 
@@ -39,15 +49,13 @@ Route::middleware('guest')->group(function () {
         ->name('login.store');
 });
 
-
 /*
 |--------------------------------------------------------------------------
-| Authenticated Routes
+| Authenticated Routes (Candidate & Shared)
 |--------------------------------------------------------------------------
 */
 
 Route::middleware('auth')->group(function () {
-
     Route::get('/dashboard', [DashboardController::class, 'index'])
         ->name('dashboard');
 
@@ -57,204 +65,154 @@ Route::middleware('auth')->group(function () {
     Route::get('/me', [AuthController::class, 'me'])
         ->name('me');
 
+    // Candidate Job Application
+    Route::get('/jobs/{job}/apply', [ApplicationController::class, 'create'])
+        ->name('applications.create');
+
+    Route::post('/jobs/{job}/apply', [ApplicationController::class, 'store'])
+        ->name('applications.store');
+
+    Route::get('/my-applications', [ApplicationController::class, 'index'])
+        ->name('applications.index');
+
+
+    // Singular Candidate Offer Routes
+    Route::get('/offer', [ApplicationController::class, 'showOffer'])
+        ->name('offers.current');
+
+    Route::get('/applications/{application}/offer', [ApplicationController::class, 'showOffer'])
+        ->name('applications.offer.show');
+
+    // Offer Response Actions
+    Route::post('/applications/{application}/offer/accept', [ApplicationController::class, 'acceptOffer'])
+        ->name('applications.offer.accept');
+
+    Route::post('/applications/{application}/offer/decline', [ApplicationController::class, 'declineOffer'])
+        ->name('applications.offer.decline');
+
+    Route::get('/applications/{application}/offer/download', [ApplicationController::class, 'downloadOffer'])
+        ->name('applications.offer.download');
+
+    Route::post('/applications/{application}/offer/upload-signed', [ApplicationController::class, 'uploadSignedOffer'])
+        ->name('applications.offer.upload-signed');
+
+    Route::get('/applications/{application}/offer/download-signed', [ApplicationController::class, 'downloadSignedOffer'])
+        ->name('applications.offer.download-signed');
+
+    Route::post('/applications/{application}/offer/request-joining-date', [ApplicationController::class, 'requestJoiningDate'])
+        ->name('applications.offer.request-joining-date');
+
+    // Profile Management
+    Route::get('/profile', [ProfileController::class, 'index'])
+        ->name('profile');
+
+    Route::put('/profile', [ProfileController::class, 'update'])
+        ->name('profile.update');
+
+    Route::post('/profile/resume', [ProfileController::class, 'uploadResume'])
+        ->name('profile.resume.upload');
+
+    Route::delete('/profile/resume/{resume}', [ProfileController::class, 'deleteResume'])
+        ->name('profile.resume.delete');
+
+    // Notifications
+    Route::post('/notifications/{notification}/read', [NotificationController::class, 'read'])
+        ->name('notifications.read');
+
+    Route::post('/notifications/read-all', [NotificationController::class, 'readAll'])
+        ->name('notifications.read-all');
 });
 
-
-//  Admin Route
-Route::middleware(['auth', 'admin'])->group(function () {
-
-    Route::get('/admin/dashboard', [
-        AdminController::class,
-        'dashboard'
-    ])->name('admin.dashboard');
-
-});
-
-
-//  Job route
-
-use App\Http\Controllers\JobController;
-
-Route::get('/jobs', [JobController::class, 'index'])
-    ->name('jobs.index');
-
-Route::get('/jobs/{job}', [JobController::class, 'show'])
-    ->name('jobs.show');
+/*
+|--------------------------------------------------------------------------
+| Admin Routes
+|--------------------------------------------------------------------------
+*/
 
 Route::middleware(['auth', 'admin'])
     ->prefix('admin')
+    ->name('admin.')
     ->group(function () {
+        Route::get('/dashboard', [AdminController::class, 'dashboard'])
+            ->name('dashboard');
 
-        Route::get('/jobs', [
-            JobController::class,
-            'adminIndex'
-        ])->name('admin.jobs.index');
+        // Manage Jobs
+        Route::get('/jobs', [JobController::class, 'adminIndex'])
+            ->name('jobs.index');
 
+        Route::get('/jobs/create', [JobController::class, 'create'])
+            ->name('jobs.create');
 
-        Route::get('/jobs/create', [
-            JobController::class,
-            'create'
-        ])->name('admin.jobs.create');
+        Route::post('/jobs', [JobController::class, 'store'])
+            ->name('jobs.store');
 
+        Route::get('/jobs/{job}/edit', [JobController::class, 'edit'])
+            ->name('jobs.edit');
 
-        Route::post('/jobs', [
-            JobController::class,
-            'store'
-        ])->name('admin.jobs.store');
+        Route::put('/jobs/{job}', [JobController::class, 'update'])
+            ->name('jobs.update');
 
+        Route::delete('/jobs/{job}', [JobController::class, 'destroy'])
+            ->name('jobs.destroy');
 
-        // ==============================
-        // ADMIN APPLICATIONS
-        // ==============================
+        // Admin Applications
+        Route::get('/applications', [AdminApplicationController::class, 'index'])
+            ->name('applications.index');
 
-        Route::get('/applications', [
-            AdminApplicationController::class,
-            'index'
-        ])->name('admin.applications.index');
+        Route::get('/applications/{application}', [AdminApplicationController::class, 'show'])
+            ->name('applications.show');
 
+        Route::patch('/applications/{application}/status', [AdminApplicationController::class, 'updateStatus'])
+            ->name('applications.status');
 
-        Route::get('/applications/{application}', [
-            AdminApplicationController::class,
-            'show'
-        ])->name('admin.applications.show');
+        // Interview Management
+        Route::get('/applications/{application}/interview/create', [InterviewController::class, 'create'])
+            ->name('applications.interview.create');
 
+        Route::post('/applications/{application}/interview', [InterviewController::class, 'store'])
+            ->name('applications.interview.store');
 
-        Route::patch('/applications/{application}/status', [
-            AdminApplicationController::class,
-            'updateStatus'
-        ])->name('admin.applications.status');
+        Route::patch('/applications/{application}/interview/cancel', [InterviewController::class, 'cancel'])
+            ->name('applications.interview.cancel');
 
+        Route::patch('/applications/{application}/interview/complete', [InterviewController::class, 'complete'])
+            ->name('applications.interview.complete');
 
-        // ==============================
-        // JOB EDIT
-        // ==============================
+        Route::get('/applications/{application}/interview/download-attachment', [InterviewController::class, 'downloadAttachment'])
+            ->name('applications.interview.download-attachment');
 
-        Route::get('/jobs/{job}/edit', [
-            JobController::class,
-            'edit'
-        ])->name('admin.jobs.edit');
+        // Offer Management
+        Route::get('/applications/{application}/offer/create', [OfferController::class, 'create'])
+            ->name('applications.offer.create');
 
+        Route::post('/applications/{application}/offer', [OfferController::class, 'store'])
+            ->name('applications.offer.store');
 
-        Route::put('/jobs/{job}', [
-            JobController::class,
-            'update'
-        ])->name('admin.jobs.update');
+        Route::post('/applications/{application}/offer/send', [OfferController::class, 'send'])
+            ->name('applications.offer.send');
 
+        Route::post('/applications/{application}/offer/generate-letter', [OfferController::class, 'generateLetter'])
+            ->name('applications.offer.generate-letter');
 
-        Route::delete('/jobs/{job}', [
-            JobController::class,
-            'destroy'
-        ])->name('admin.jobs.destroy');
+        Route::post('/applications/{application}/offer/revise', [OfferController::class, 'revise'])
+            ->name('applications.offer.revise');
 
-        
-    Route::get('/applications/{application}/interview/create', [
-    InterviewController::class,
-    'create'
-    ])->name('admin.applications.interview.create');
+        Route::get('/applications/{application}/offer/download', [OfferController::class, 'downloadLetter'])
+            ->name('applications.offer.download');
 
-    Route::post('/applications/{application}/interview', [
-    InterviewController::class,
-        'store'
-    ])->name('admin.applications.interview.store');
+        Route::get('/applications/{application}/offer/download-signed', [OfferController::class, 'downloadSigned'])
+            ->name('applications.offer.download-signed');
 
+        // Employee Management
+        Route::get('/employees', [EmployeeController::class, 'index'])
+            ->name('employees.index');
+
+        Route::get('/employees/{employee}', [EmployeeController::class, 'show'])
+            ->name('employees.show');
+
+        Route::patch('/employees/{employee}/status', [EmployeeController::class, 'updateStatus'])
+            ->name('employees.status');
+
+        Route::get('/employees/{employee}/signed-offer', [EmployeeController::class, 'downloadSignedOffer'])
+            ->name('employees.signed-offer');
     });
-
-    Route::patch('/applications/{application}/interview/cancel', [
-    InterviewController::class,
-    'cancel'
-])->name('admin.applications.interview.cancel');
-
-Route::patch('/applications/{application}/interview/complete', [
-    InterviewController::class,
-    'complete'
-])->name('admin.applications.interview.complete');
-
-
-Route::get('/applications/{application}/offer/create', [
-    OfferController::class,
-    'create'
-])->name('admin.applications.offer.create');
-
-
-Route::post('/applications/{application}/offer', [
-    OfferController::class,
-    'store'
-])->name('admin.applications.offer.store');
-
-
-Route::post('/applications/{application}/offer/send', [
-    OfferController::class,
-    'send'
-])->name('admin.applications.offer.send');
-
-Route::post('/applications/{application}/offer/generate-letter', [
-    OfferController::class,
-    'generateLetter'
-])->name('admin.applications.offer.generate-letter');
-
-Route::post(
-    '/applications/{application}/offer/accept',
-    [ApplicationController::class, 'acceptOffer']
-)->name('applications.offer.accept');
-
-Route::post(
-    '/applications/{application}/offer/decline',
-    [ApplicationController::class, 'declineOffer']
-)->name('applications.offer.decline');
-
-
-
-
-
-Route::middleware('auth')->group(function () {
-
-    Route::get('/jobs/{job}/apply', [
-        ApplicationController::class,
-        'create'
-    ])->name('applications.create');
-
-    Route::post('/jobs/{job}/apply', [
-        ApplicationController::class,
-        'store'
-    ])->name('applications.store');
-
-    Route::get('/my-applications', [
-        ApplicationController::class,
-        'index'
-    ])->name('applications.index');
-
-    Route::get('/profile', [
-    ProfileController::class,
-    'index'
-])->name('profile');
-
-Route::put('/profile', [
-    ProfileController::class,
-    'update'
-])->name('profile.update');
-
-Route::post('/profile/resume', [
-    ProfileController::class,
-    'uploadResume'
-])->name('profile.resume.upload');
-
-Route::delete('/profile/resume/{resume}', [
-    ProfileController::class,
-    'deleteResume'
-])->name('profile.resume.delete');
-
-
-Route::post('/notifications/{notification}/read', [
-    NotificationController::class,
-    'read'
-])->name('notifications.read');
-
-Route::post('/notifications/read-all', [
-    NotificationController::class,
-    'readAll'
-])->name('notifications.read-all');
-
-
-
-});
-

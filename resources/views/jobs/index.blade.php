@@ -1,424 +1,138 @@
 @extends('layouts.app')
 
-@section('title', 'Manage Jobs')
+@section('title', 'Explore Jobs')
 
 @section('content')
 
-<div class="min-h-screen bg-slate-50">
+<div class="w-full">
 
-    {{-- Header --}}
-
-    <div class="border-b border-slate-200 bg-white">
-
-        <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
-
-            <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-
-                <div>
-
-                    <div class="flex items-center gap-2 text-sm text-slate-500">
-
-                        <a
-                            href="{{ route('admin.dashboard') }}"
-                            class="hover:text-indigo-600"
-                        >
-                            Admin
-                        </a>
-
-                        <span>/</span>
-
-                        <span>Jobs</span>
-
-                    </div>
-
-                    <h1 class="mt-2 text-3xl font-bold tracking-tight text-slate-900">
-                        Manage Jobs
-                    </h1>
-
-                    <p class="mt-1 text-sm text-slate-500">
-                        Create, edit and manage job opportunities.
-                    </p>
-
-                </div>
-
-
-                <a
-                    href="{{ route('admin.jobs.create') }}"
-                    class="inline-flex items-center justify-center rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-indigo-700"
-                >
-                    <span class="mr-2 text-lg">+</span>
-                    Create Job
-                </a>
-
-            </div>
-
+    {{-- Hero Section --}}
+    <div class="border-b border-[#E5E5E5] bg-[#F7F7F7] py-14 transition-colors duration-200 dark:border-[#262626] dark:bg-[#141414]">
+        <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 text-center sm:text-left">
+            <span class="inline-flex items-center gap-2 rounded-full border border-brand-500/30 bg-brand-500/10 px-3.5 py-1 text-xs font-bold uppercase tracking-wider text-brand-500">
+                <span>⚡ Open Roles</span>
+            </span>
+            <h1 class="mt-4 text-3xl font-extrabold tracking-tight text-[#111111] sm:text-5xl dark:text-white">
+                Find Your Next Engineering Opportunity
+            </h1>
+            <p class="mt-3 max-w-2xl text-base text-[#6B6B6B] dark:text-[#A1A1A1]">
+                Curated developer roles across high-growth engineering teams. Apply with your verified profile and track your recruitment timeline in real-time.
+            </p>
         </div>
-
     </div>
 
+    {{-- Main Job Search & Feed Container --}}
+    <div class="mx-auto max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
 
-    {{-- Content --}}
+        {{-- Filter & Search Form --}}
+        <div class="mb-10 rounded-2xl border border-[#E5E5E5] bg-[#F7F7F7] p-5 dark:border-[#262626] dark:bg-[#141414]">
+            <form method="GET" action="{{ route('jobs.index') }}" class="grid gap-4 sm:grid-cols-2 lg:grid-cols-12">
+                
+                {{-- Search Bar --}}
+                <div class="relative sm:col-span-2 lg:col-span-5">
+                    <span class="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3.5 text-slate-400">
+                        🔍
+                    </span>
+                    <input
+                        type="text"
+                        name="search"
+                        value="{{ request('search') }}"
+                        placeholder="Search by role, company, or technology..."
+                        class="w-full rounded-xl border border-[#E5E5E5] bg-white py-3 pl-10 pr-4 text-sm text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
-    <div class="mx-auto max-w-7xl px-4 py-8 sm:px-6 lg:px-8">
+                {{-- Job Type Filter --}}
+                <div class="lg:col-span-3">
+                    <select
+                        name="job_type"
+                        class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-3 text-sm text-[#111111] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                        <option value="">All Job Types</option>
+                        <option value="Full Time" {{ request('job_type') === 'Full Time' ? 'selected' : '' }}>Full Time</option>
+                        <option value="Part Time" {{ request('job_type') === 'Part Time' ? 'selected' : '' }}>Part Time</option>
+                        <option value="Internship" {{ request('job_type') === 'Internship' ? 'selected' : '' }}>Internship</option>
+                        <option value="Contract" {{ request('job_type') === 'Contract' ? 'selected' : '' }}>Contract</option>
+                    </select>
+                </div>
 
+                {{-- Location / Keyword Filter --}}
+                <div class="lg:col-span-2">
+                    <input
+                        type="text"
+                        name="location"
+                        value="{{ request('location') }}"
+                        placeholder="Location / Remote"
+                        class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-3 text-sm text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                    >
+                </div>
 
-        {{-- Success Message --}}
+                {{-- Actions --}}
+                <div class="flex gap-2 lg:col-span-2">
+                    <button
+                        type="submit"
+                        class="w-full rounded-xl bg-brand-500 px-4 py-3 text-sm font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
+                    >
+                        Search
+                    </button>
+                    @if(request()->hasAny(['search', 'job_type', 'location']))
+                        <a
+                            href="{{ route('jobs.index') }}"
+                            class="flex items-center justify-center rounded-xl border border-[#E5E5E5] bg-white px-3 py-3 text-sm font-bold text-[#111111] transition hover:bg-[#F7F7F7] dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                            title="Clear search filters"
+                        >
+                            ✕
+                        </a>
+                    @endif
+                </div>
 
-        @if(session('success'))
-
-            <div class="mb-6 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-700">
-
-                <span class="font-bold">✓</span>
-
-                {{ session('success') }}
-
-            </div>
-
-        @endif
-
-
-        {{-- Stats --}}
-
-        <div class="mb-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-                <p class="text-sm font-medium text-slate-500">
-                    Total Jobs
-                </p>
-
-                <p class="mt-2 text-3xl font-bold text-slate-900">
-                    {{ $jobs->total() }}
-                </p>
-
-            </div>
-
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-
-                <p class="text-sm font-medium text-slate-500">
-                    Current Page
-                </p>
-
-                <p class="mt-2 text-3xl font-bold text-slate-900">
-                    {{ $jobs->currentPage() }}
-                </p>
-
-            </div>
-
-
-            <div class="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm sm:col-span-2 lg:col-span-1">
-
-                <p class="text-sm font-medium text-slate-500">
-                    Showing
-                </p>
-
-                <p class="mt-2 text-3xl font-bold text-slate-900">
-
-                    {{ $jobs->count() }}
-
-                </p>
-
-            </div>
-
+            </form>
         </div>
 
+        {{-- Results Counter & Sorting Info --}}
+        <div class="mb-6 flex items-center justify-between">
+            <h2 class="text-sm font-bold tracking-tight text-[#111111] dark:text-white">
+                Available Positions ({{ $jobs->total() }})
+            </h2>
+            <p class="text-xs font-medium text-[#6B6B6B] dark:text-[#A1A1A1]">
+                Page {{ $jobs->currentPage() }} of {{ $jobs->lastPage() }}
+            </p>
+        </div>
 
-        {{-- Jobs --}}
-
-        <div class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-
-            {{-- Table Header --}}
-
-            <div class="border-b border-slate-200 px-6 py-5">
-
-                <h2 class="text-lg font-semibold text-slate-900">
-                    All Jobs
-                </h2>
-
+        {{-- Jobs Grid --}}
+        @if($jobs->count() > 0)
+            <div class="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($jobs as $job)
+                    @include('components.job-card', ['job' => $job])
+                @endforeach
             </div>
-
-
-            @if($jobs->count())
-
-                {{-- Desktop Table --}}
-
-                <div class="hidden overflow-x-auto md:block">
-
-                    <table class="w-full">
-
-                        <thead class="bg-slate-50">
-
-                            <tr>
-
-                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                    Job
-                                </th>
-
-                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                    Company
-                                </th>
-
-                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                    Location
-                                </th>
-
-                                <th class="px-6 py-4 text-left text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                    Type
-                                </th>
-
-                                <th class="px-6 py-4 text-right text-xs font-semibold uppercase tracking-wider text-slate-500">
-                                    Actions
-                                </th>
-
-                            </tr>
-
-                        </thead>
-
-
-                        <tbody class="divide-y divide-slate-100">
-
-                            @foreach($jobs as $job)
-
-                                <tr class="transition hover:bg-slate-50">
-
-                                    <td class="px-6 py-5">
-
-                                        <div>
-
-                                            <p class="font-semibold text-slate-900">
-                                                {{ $job->title }}
-                                            </p>
-
-                                            <p class="mt-1 text-xs text-slate-400">
-                                                Posted {{ $job->created_at->diffForHumans() }}
-                                            </p>
-
-                                        </div>
-
-                                    </td>
-
-
-                                    <td class="px-6 py-5">
-
-                                        <span class="text-sm text-slate-600">
-                                            {{ $job->company }}
-                                        </span>
-
-                                    </td>
-
-
-                                    <td class="px-6 py-5">
-
-                                        <span class="text-sm text-slate-600">
-
-                                            {{ $job->location ?? 'Remote' }}
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <td class="px-6 py-5">
-
-                                        <span class="inline-flex rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
-
-                                            {{ $job->job_type ?? 'N/A' }}
-
-                                        </span>
-
-                                    </td>
-
-
-                                    <td class="px-6 py-5">
-
-                                        <div class="flex justify-end gap-2">
-
-                                            <a
-                                                href="{{ route('jobs.show', $job) }}"
-                                                class="rounded-lg border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-600 transition hover:bg-slate-100"
-                                            >
-                                                View
-                                            </a>
-
-
-                                            <a
-                                                href="{{ route('admin.jobs.edit', $job) }}"
-                                                class="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-2 text-xs font-semibold text-indigo-600 transition hover:bg-indigo-100"
-                                            >
-                                                Edit
-                                            </a>
-
-
-                                            <form
-                                                method="POST"
-                                                action="{{ route('admin.jobs.destroy', $job) }}"
-                                                onsubmit="return confirm('Are you sure you want to delete this job?');"
-                                            >
-
-                                                @csrf
-
-                                                @method('DELETE')
-
-                                                <button
-                                                    type="submit"
-                                                    class="rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 transition hover:bg-red-100"
-                                                >
-                                                    Delete
-                                                </button>
-
-                                            </form>
-
-                                        </div>
-
-                                    </td>
-
-                                </tr>
-
-                            @endforeach
-
-                        </tbody>
-
-                    </table>
-
-                </div>
-
-
-                {{-- Mobile Cards --}}
-
-                <div class="divide-y divide-slate-100 md:hidden">
-
-                    @foreach($jobs as $job)
-
-                        <div class="p-5">
-
-                            <div class="flex items-start justify-between gap-4">
-
-                                <div>
-
-                                    <h3 class="font-semibold text-slate-900">
-                                        {{ $job->title }}
-                                    </h3>
-
-                                    <p class="mt-1 text-sm text-slate-500">
-                                        {{ $job->company }}
-                                    </p>
-
-                                </div>
-
-
-                                <span class="rounded-full bg-indigo-50 px-3 py-1 text-xs font-semibold text-indigo-600">
-
-                                    {{ $job->job_type ?? 'N/A' }}
-
-                                </span>
-
-                            </div>
-
-
-                            <div class="mt-4 space-y-1 text-sm text-slate-500">
-
-                                <p>
-                                    📍 {{ $job->location ?? 'Remote' }}
-                                </p>
-
-                                @if($job->experience)
-
-                                    <p>
-                                        💼 {{ $job->experience }}
-                                    </p>
-
-                                @endif
-
-                            </div>
-
-
-                            <div class="mt-5 flex gap-2">
-
-                                <a
-                                    href="{{ route('jobs.show', $job) }}"
-                                    class="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-center text-xs font-semibold text-slate-600"
-                                >
-                                    View
-                                </a>
-
-                                <a
-                                    href="{{ route('admin.jobs.edit', $job) }}"
-                                    class="flex-1 rounded-lg bg-indigo-50 px-3 py-2 text-center text-xs font-semibold text-indigo-600"
-                                >
-                                    Edit
-                                </a>
-
-                                <form
-                                    method="POST"
-                                    action="{{ route('admin.jobs.destroy', $job) }}"
-                                    class="flex-1"
-                                    onsubmit="return confirm('Are you sure you want to delete this job?');"
-                                >
-
-                                    @csrf
-
-                                    @method('DELETE')
-
-                                    <button
-                                        type="submit"
-                                        class="w-full rounded-lg bg-red-50 px-3 py-2 text-xs font-semibold text-red-600"
-                                    >
-                                        Delete
-                                    </button>
-
-                                </form>
-
-                            </div>
-
-                        </div>
-
-                    @endforeach
-
-                </div>
-
-
-            @else
-
-                <div class="px-6 py-16 text-center">
-
-                    <div class="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-slate-100 text-2xl">
-                        📋
-                    </div>
-
-                    <h3 class="mt-4 text-lg font-semibold text-slate-900">
-                        No jobs yet
-                    </h3>
-
-                    <p class="mt-2 text-sm text-slate-500">
-                        Create your first job opportunity.
-                    </p>
-
-                    <a
-                        href="{{ route('admin.jobs.create') }}"
-                        class="mt-6 inline-flex rounded-xl bg-indigo-600 px-5 py-3 text-sm font-semibold text-white hover:bg-indigo-700"
-                    >
-                        Create Job
-                    </a>
-
-                </div>
-
-            @endif
-
 
             {{-- Pagination --}}
-
-            @if($jobs->hasPages())
-
-                <div class="border-t border-slate-200 px-6 py-5">
-
-                    {{ $jobs->links() }}
-
-                </div>
-
-            @endif
-
-        </div>
+            <div class="mt-12">
+                {{ $jobs->links() }}
+            </div>
+        @else
+            {{-- Polished Developer Empty State --}}
+            <div class="rounded-2xl border border-dashed border-[#E5E5E5] bg-[#F7F7F7] p-16 text-center dark:border-[#262626] dark:bg-[#141414]">
+                <span class="inline-flex h-14 w-14 items-center justify-center rounded-2xl bg-brand-500/10 text-3xl text-brand-500 dark:bg-brand-500/20">
+                    🔍
+                </span>
+                <h3 class="mt-4 text-base font-bold text-[#111111] dark:text-white">
+                    No matching positions found
+                </h3>
+                <p class="mt-1.5 text-xs text-[#6B6B6B] dark:text-[#A1A1A1] max-w-sm mx-auto">
+                    Try adjusting your keywords or clearing active filters to browse all open opportunities.
+                </p>
+                @if(request()->hasAny(['search', 'job_type', 'location']))
+                    <a
+                        href="{{ route('jobs.index') }}"
+                        class="mt-5 inline-flex items-center gap-1 rounded-xl bg-brand-500 px-4 py-2.5 text-xs font-bold text-white transition hover:bg-brand-600"
+                    >
+                        Reset All Filters
+                    </a>
+                @endif
+            </div>
+        @endif
 
     </div>
 

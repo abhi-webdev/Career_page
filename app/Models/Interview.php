@@ -15,12 +15,17 @@ class Interview extends Model
         'meeting_link',
         'notes',
         'status',
+        'admin_feedback',
+        'feedback_attachment_path',
+        'candidate_feedback',
+        'feedback_submitted_at',
     ];
 
     protected function casts(): array
     {
         return [
             'interview_date' => 'date',
+            'feedback_submitted_at' => 'datetime',
         ];
     }
 

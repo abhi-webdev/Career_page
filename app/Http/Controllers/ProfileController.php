@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Illuminate\Validation\Rule;
 
 class ProfileController extends Controller
 {
@@ -36,6 +37,8 @@ class ProfileController extends Controller
 
     public function update(Request $request)
     {
+        $user = auth()->user();
+
         $validated = $request->validate([
             'name' => [
                 'required',
@@ -47,17 +50,14 @@ class ProfileController extends Controller
                 'required',
                 'email',
                 'max:255',
+                Rule::unique('users')->ignore($user->id),
             ],
         ]);
 
-
-        $user = auth()->user();
-
         $user->update([
             'name' => $validated['name'],
-            'email' => $validated['email'],
+            'email' => strtolower($validated['email']),
         ]);
-
 
         return back()->with(
             'success',
@@ -83,29 +83,25 @@ class ProfileController extends Controller
             ],
         ]);
 
-
         $user = auth()->user();
-
 
         /*
         |--------------------------------------------------------------------------
-        | Store file
+        | Store file safely
         |--------------------------------------------------------------------------
         */
 
         $file = $request->file('resume');
 
-        $fileName =
-            time() . '_' .
-            $file->getClientOriginalName();
-
+        $extension = $file->getClientOriginalExtension();
+        $safeBase = preg_replace('/[^A-Za-z0-9_\-]/', '_', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+        $fileName = time() . '_' . $safeBase . '.' . $extension;
 
         $path = $file->storeAs(
             'resumes',
             $fileName,
             'public'
         );
-
 
         /*
         |--------------------------------------------------------------------------
@@ -120,7 +116,6 @@ class ProfileController extends Controller
             'file_path' =>
                 $path,
         ]);
-
 
         return back()->with(
             'success',

@@ -252,6 +252,38 @@
         @endif
 
 
+        {{-- Action Required Note --}}
+        <div
+            style="
+                margin-top:24px;
+                padding:18px;
+                background:#f0fdf4;
+                border:1px solid #bbf7d0;
+                border-radius:10px;
+            "
+        >
+            <p
+                style="
+                    margin:0 0 6px;
+                    font-size:13px;
+                    font-weight:bold;
+                    color:#166534;
+                "
+            >
+                Next Steps Required:
+            </p>
+            <p
+                style="
+                    margin:0;
+                    font-size:13px;
+                    line-height:1.6;
+                    color:#166534;
+                "
+            >
+                Please download the offer letter, sign it, and upload the signed copy in the response section of your candidate portal.
+            </p>
+        </div>
+
         <p
             style="
                 margin-top:28px;
@@ -260,11 +292,9 @@
                 color:#475569;
             "
         >
-
             Please review the offer details carefully. You will be
-            able to accept or reject the offer from your candidate
-            dashboard.
-
+            able to accept or decline the offer from your candidate
+            portal.
         </p>
 
 
