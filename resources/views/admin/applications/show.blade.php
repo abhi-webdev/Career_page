@@ -377,6 +377,13 @@
                 @if($hrInterview)
                     <div class="mt-4 space-y-3 text-xs">
                         <div class="flex justify-between">
+                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Assigned HR:</span>
+                            <span class="font-bold text-purple-700 dark:text-purple-300">
+                                {{ $hrInterview->interviewer ? $hrInterview->interviewer->name : 'Not Assigned' }} (HR)
+                            </span>
+                        </div>
+
+                        <div class="flex justify-between">
                             <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Schedule:</span>
                             <span class="font-bold text-[#111111] dark:text-white">
                                 {{ $hrInterview->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($hrInterview->start_time)->format('h:i A') }}
@@ -466,6 +473,11 @@
                                         Complete HR Round ✓
                                     </button>
                                 </form>
+                                <div class="mt-2 text-center">
+                                    <a href="{{ route('admin.applications.interview.create', ['application' => $application, 'type' => 'hr']) }}" class="text-[11px] text-purple-600 hover:underline">
+                                        Reschedule / Change HR Interviewer ↻
+                                    </a>
+                                </div>
                             </div>
                         @endif
                     </div>
@@ -476,7 +488,7 @@
                         </p>
                         @if(!$isHired)
                             <a
-                                href="{{ route('admin.applications.interview.create', $application) }}"
+                                href="{{ route('admin.applications.interview.create', ['application' => $application, 'type' => 'hr']) }}"
                                 class="mt-3 inline-flex items-center gap-1 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-purple-700 shadow-xs"
                             >
                                 + Schedule HR Interview
@@ -507,6 +519,13 @@
 
                     @if($techInterview)
                         <div class="mt-4 space-y-3 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Assigned TR:</span>
+                                <span class="font-bold text-blue-700 dark:text-blue-300">
+                                    {{ $techInterview->interviewer ? $techInterview->interviewer->name : 'Not Assigned' }} (TR)
+                                </span>
+                            </div>
+
                             <div class="flex justify-between">
                                 <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Schedule:</span>
                                 <span class="font-bold text-[#111111] dark:text-white">
@@ -583,6 +602,11 @@
                                             Complete Technical Round ✓
                                         </button>
                                     </form>
+                                    <div class="mt-2 text-center">
+                                        <a href="{{ route('admin.applications.interview.create', ['application' => $application, 'type' => 'technical']) }}" class="text-[11px] text-blue-600 hover:underline">
+                                            Reschedule / Change Technical Interviewer ↻
+                                        </a>
+                                    </div>
                                 </div>
                             @endif
                         </div>
@@ -597,7 +621,7 @@
                             </p>
                             @if(!$isHired && $application->hasHRInterviewPassed())
                                 <a
-                                    href="{{ route('admin.applications.interview.create', $application) }}"
+                                    href="{{ route('admin.applications.interview.create', ['application' => $application, 'type' => 'technical']) }}"
                                     class="mt-3 inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 shadow-xs"
                                 >
                                     + Schedule Technical Interview
@@ -605,6 +629,21 @@
                             @endif
                         </div>
                     @endif
+                </div>
+            @else
+                <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center gap-2.5">
+                            <span class="text-base">⚡</span>
+                            <div>
+                                <h3 class="text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">Technical Interview</h3>
+                                <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Not Required for this position (Bypasses directly to Admin Final Review).</p>
+                            </div>
+                        </div>
+                        <span class="rounded-full bg-slate-500/10 px-2.5 py-0.5 text-[10px] font-bold text-[#6B6B6B] dark:text-[#A1A1A1]">
+                            Not Required
+                        </span>
+                    </div>
                 </div>
             @endif
 

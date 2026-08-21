@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Interview;
+use App\Models\User;
 use Illuminate\Http\Request;
 use App\Mail\InterviewScheduled;
 use App\Mail\InterviewCancelled;
@@ -18,24 +19,34 @@ class InterviewController extends Controller
     /**
      * Show interview scheduling form.
      */
-    public function create(Application $application)
+    public function create(Request $request, Application $application)
     {
         $application->load([
             'user',
             'job',
             'interviews.interviewer',
-            'hrInterview',
-            'technicalInterview',
+            'hrInterview.interviewer',
+            'technicalInterview.interviewer',
         ]);
+
+        $type = $request->query('type');
+        if (!$type) {
+            $type = ($application->hasHRInterviewPassed() && $application->requiresTechnicalInterview()) ? 'technical' : 'hr';
+        }
+
+        $hrInterviewers = User::where('role', 'hr')->orderBy('name')->get(['id', 'name', 'email']);
+        $trInterviewers = User::where('role', 'tr')->orderBy('name')->get(['id', 'name', 'email']);
+
+        $targetInterview = $type === 'technical' ? $application->technicalInterview : $application->hrInterview;
 
         return view(
             'admin.interviews.create',
-            compact('application')
+            compact('application', 'type', 'hrInterviewers', 'trInterviewers', 'targetInterview')
         );
     }
 
     /**
-     * Schedule or reschedule interview (HR or Technical).
+     * Schedule or reschedule interview (HR or Technical) with explicit interviewer assignment.
      */
     public function store(Request $request, Application $application)
     {
@@ -43,6 +54,10 @@ class InterviewController extends Controller
             'type' => [
                 'nullable',
                 'in:hr,technical',
+            ],
+            'interviewer_id' => [
+                'nullable',
+                'exists:users,id',
             ],
             'interview_date' => [
                 'required',
@@ -78,7 +93,7 @@ class InterviewController extends Controller
         }
 
         // Determine interview type: explicit or automatically based on current candidate state
-        $type = $validated['type'] ?? ($application->hasHRInterviewPassed() && $application->requiresTechnicalInterview() ? 'technical' : 'hr');
+        $type = $validated['type'] ?? (($application->hasHRInterviewPassed() && $application->requiresTechnicalInterview()) ? 'technical' : 'hr');
 
         // Check if candidate is at appropriate stage
         if ($type === 'hr' && !in_array($application->status, ['shortlisted', 'hr_interview', 'interview'])) {
@@ -106,6 +121,35 @@ class InterviewController extends Controller
             );
         }
 
+        // Determine Interviewer with strict role verification
+        $interviewerId = $validated['interviewer_id'] ?? ($existingInterview ? $existingInterview->interviewer_id : null);
+
+        if (!$interviewerId) {
+            $defaultUser = $type === 'technical'
+                ? User::where('role', 'tr')->first()
+                : User::where('role', 'hr')->first();
+            $interviewerId = $defaultUser?->id ?? auth()->id();
+        }
+
+        $assignedUser = User::find($interviewerId);
+        if (!$assignedUser) {
+            return back()->withErrors([
+                'interviewer_id' => 'Selected interviewer could not be found.',
+            ])->withInput();
+        }
+
+        if ($type === 'hr' && $assignedUser->role !== 'hr' && $assignedUser->role !== 'admin') {
+            return back()->withErrors([
+                'interviewer_id' => 'Unauthorized assignment: Only users with the HR role can be assigned to HR interviews.',
+            ])->withInput();
+        }
+
+        if ($type === 'technical' && $assignedUser->role !== 'tr' && $assignedUser->role !== 'admin') {
+            return back()->withErrors([
+                'interviewer_id' => 'Unauthorized assignment: Only users with the Technical Recruiter (TR) role can be assigned to Technical interviews.',
+            ])->withInput();
+        }
+
         $isReschedule = $existingInterview && $existingInterview->status === 'scheduled';
 
         $interview = Interview::updateOrCreate(
@@ -121,7 +165,7 @@ class InterviewController extends Controller
                 'notes' => $validated['notes'] ?? null,
                 'status' => 'scheduled',
                 'result' => 'pending',
-                'interviewer_id' => auth()->id(),
+                'interviewer_id' => $assignedUser->id,
             ]
         );
 
@@ -131,6 +175,16 @@ class InterviewController extends Controller
 
         $roundLabel = $type === 'technical' ? 'Technical Interview' : 'HR Interview';
 
+        // Notify Assigned Interviewer
+        $assignedUser->notify(
+            new ApplicationStatusNotification(
+                $isReschedule ? "{$roundLabel} Assignment Updated" : "New {$roundLabel} Assigned",
+                "You have been assigned to interview {$application->user->name} for {$application->job->title} on {$interview->interview_date->format('d M Y')}.",
+                'interview'
+            )
+        );
+
+        // Notify Candidate
         $application->user->notify(
             new ApplicationStatusNotification(
                 $isReschedule ? "{$roundLabel} Rescheduled" : "{$roundLabel} Scheduled",
@@ -144,6 +198,7 @@ class InterviewController extends Controller
         $interview->load([
             'application.user',
             'application.job',
+            'interviewer',
         ]);
 
         try {
@@ -165,22 +220,27 @@ class InterviewController extends Controller
             ->with(
                 'success',
                 $isReschedule
-                    ? "{$roundLabel} rescheduled and candidate notified."
-                    : "{$roundLabel} scheduled and candidate notified."
+                    ? "{$roundLabel} rescheduled with {$assignedUser->name} and candidate notified."
+                    : "{$roundLabel} scheduled with {$assignedUser->name} and candidate notified."
             );
     }
 
     /**
      * Cancel scheduled interview.
      */
-    public function cancel(Application $application)
+    public function cancel(Request $request, Application $application)
     {
-        $interview = $application->interview;
+        $type = $request->input('type');
+        $interviewQuery = Interview::where('application_id', $application->id)->where('status', 'scheduled');
+        if ($type) {
+            $interviewQuery->where('type', $type);
+        }
+        $interview = $interviewQuery->latest()->first() ?? $application->interview;
 
         if (!$interview) {
             return back()->with(
                 'error',
-                'No interview is scheduled for this application.'
+                'No active scheduled interview found to cancel.'
             );
         }
 
@@ -194,6 +254,7 @@ class InterviewController extends Controller
         $interview->load([
             'application.user',
             'application.job',
+            'interviewer',
         ]);
 
         $interview->update([
@@ -205,6 +266,16 @@ class InterviewController extends Controller
         $application->update([
             'status' => $revertStatus,
         ]);
+
+        if ($interview->interviewer) {
+            $interview->interviewer->notify(
+                new ApplicationStatusNotification(
+                    'Interview Cancelled',
+                    'The scheduled ' . ($interview->type === 'technical' ? 'Technical' : 'HR') . ' interview for ' . $application->user->name . ' has been cancelled.',
+                    'interview'
+                )
+            );
+        }
 
         $application->user->notify(
             new ApplicationStatusNotification(

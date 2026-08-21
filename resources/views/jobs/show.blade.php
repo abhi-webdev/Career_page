@@ -158,12 +158,19 @@
                                 The deadline for this role has passed.
                             </p>
                         </div>
+                    @elseif($job->application_start && now()->lt($job->application_start))
+                        <div class="mt-6 rounded-xl border border-blue-500/30 bg-blue-500/10 p-4 text-center">
+                            <p class="text-xs font-bold text-blue-600 dark:text-blue-400">Opening Soon</p>
+                            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                Applications open on {{ $job->application_start->format('d M Y') }}.
+                            </p>
+                        </div>
                     @else
                         <a
-                            href="{{ route('login') }}"
-                            class="mt-6 block w-full rounded-xl bg-brand-500 py-3 text-center text-sm font-bold text-white shadow-xs transition hover:bg-brand-600"
+                            href="{{ route('applications.create', $job) }}"
+                            class="mt-6 block w-full rounded-xl bg-brand-500 py-3 text-center text-sm font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
                         >
-                            Sign In to Apply →
+                            Apply Now →
                         </a>
                     @endif
                 @endauth

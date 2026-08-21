@@ -1,77 +1,70 @@
-<article class="group relative flex flex-col justify-between rounded-2xl border border-[#E5E5E5] bg-[#F7F7F7] p-6 transition-all duration-200 hover:-translate-y-1 hover:border-brand-500 hover:shadow-xs dark:border-[#262626] dark:bg-[#141414] dark:hover:border-brand-500">
+@php
+    $skillsList = is_array($job->skills) ? $job->skills : [];
+    $displayedSkills = array_slice($skillsList, 0, 3);
+    $remainingCount = count($skillsList) - count($displayedSkills);
+@endphp
 
-    <div>
-        {{-- Top Row: Job Title & Job Type Badge --}}
-        <div class="flex items-start justify-between gap-4">
-            <div>
-                <h2 class="text-xl font-bold tracking-tight text-[#111111] transition group-hover:text-brand-500 dark:text-white">
-                    <a href="{{ route('jobs.show', $job) }}">
-                        {{ $job->title }}
-                    </a>
-                </h2>
-                <p class="mt-1 text-sm font-semibold text-brand-500">
-                    {{ $job->company }}
-                </p>
-            </div>
+<article class="group relative flex flex-col justify-between rounded-3xl border border-[#E5E5E5] bg-white p-7 transition-all duration-200 hover:-translate-y-1 hover:border-brand-500/80 hover:shadow-md dark:border-[#262626] dark:bg-[#141414] dark:hover:border-brand-500 space-y-6">
+
+    <div class="space-y-3.5">
+        {{-- Top Meta Row: Location • Experience • Job Type --}}
+        <div class="flex flex-wrap items-center gap-2 text-xs font-semibold">
+            <span class="text-brand-500 font-bold">
+                {{ $job->location ?? 'Bhopal' }}
+            </span>
+            
+            @if($job->experience)
+                <span class="text-[#A1A1A1]">•</span>
+                <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">
+                    {{ $job->experience }}
+                </span>
+            @endif
 
             @if($job->job_type)
-                <span class="shrink-0 rounded-full border border-brand-500/30 bg-brand-500/10 px-3 py-1 text-xs font-bold text-brand-500">
+                <span class="text-[#A1A1A1]">•</span>
+                <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">
                     {{ $job->job_type }}
                 </span>
             @endif
         </div>
 
-        {{-- Meta Badges (Location & Experience) --}}
-        <div class="mt-4 flex flex-wrap items-center gap-3 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-            @if($job->location)
-                <span class="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 font-medium dark:border-[#262626] dark:bg-[#1A1A1A]">
-                    📍 {{ $job->location }}
-                </span>
-            @endif
+        {{-- Job Title --}}
+        <h3 class="text-xl font-bold tracking-tight text-brand-500 transition hover:text-brand-600 dark:text-brand-500">
+            <a href="{{ route('jobs.show', $job) }}">
+                {{ $job->title }}
+            </a>
+        </h3>
 
-            @if($job->experience)
-                <span class="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 font-medium dark:border-[#262626] dark:bg-[#1A1A1A]">
-                    🎯 {{ $job->experience }}
-                </span>
-            @endif
+        {{-- Description Snippet (2 Lines) --}}
+        <p class="text-xs leading-relaxed text-[#6B6B6B] dark:text-[#A1A1A1] line-clamp-2">
+            {{ $job->description ? Str::limit(strip_tags($job->description), 120) : 'We are seeking a skilled engineer to build, maintain, and innovate high-performance applications.' }}
+        </p>
 
-            @if($job->application_deadline)
-                <span class="inline-flex items-center gap-1.5 rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 font-medium dark:border-[#262626] dark:bg-[#1A1A1A]">
-                    ⏳ Deadline: {{ $job->application_deadline->format('d M') }}
-                </span>
-            @endif
-        </div>
-
-        {{-- Description Snippet --}}
-        @if($job->description)
-            <p class="mt-4 text-xs leading-relaxed text-[#6B6B6B] dark:text-[#A1A1A1] line-clamp-2">
-                {{ Str::limit($job->description, 140) }}
-            </p>
-        @endif
-
-        {{-- Skill Badges --}}
-        @if($job->skills && count($job->skills))
-            <div class="mt-5 flex flex-wrap gap-1.5">
-                @foreach($job->skills as $skill)
-                    <span class="rounded-lg border border-[#E5E5E5] bg-white px-2.5 py-1 font-mono text-[11px] font-semibold text-[#111111] dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white">
+        {{-- Curated Skills Row with +X more --}}
+        @if(count($displayedSkills) > 0)
+            <div class="flex flex-wrap items-center gap-2 pt-1">
+                @foreach($displayedSkills as $skill)
+                    <span class="rounded-xl border border-[#E5E5E5] bg-white px-3 py-1 font-mono text-xs font-semibold text-[#111111] dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white shadow-2xs">
                         {{ $skill }}
                     </span>
                 @endforeach
+
+                @if($remainingCount > 0)
+                    <span class="text-xs font-semibold text-[#6B6B6B] dark:text-[#A1A1A1]">
+                        +{{ $remainingCount }} more
+                    </span>
+                @endif
             </div>
         @endif
     </div>
 
-    {{-- Card Footer: Posted timestamp + Action button --}}
-    <div class="mt-6 flex items-center justify-between border-t border-[#E5E5E5] pt-4 dark:border-[#262626]">
-        <span class="text-[11px] font-medium text-[#6B6B6B] dark:text-[#A1A1A1]">
-            Posted {{ $job->created_at->diffForHumans() }}
-        </span>
-
+    {{-- Card Footer: Full-Width [ View Position → ] Button --}}
+    <div class="pt-4 border-t border-[#E5E5E5] dark:border-[#262626]">
         <a
             href="{{ route('jobs.show', $job) }}"
-            class="inline-flex items-center gap-1 rounded-xl bg-[#111111] px-4 py-2 text-xs font-bold text-white transition duration-150 hover:bg-brand-500 dark:bg-white dark:text-[#111111] dark:hover:bg-brand-500 dark:hover:text-white"
+            class="flex w-full items-center justify-center gap-1.5 rounded-2xl border border-[#E5E5E5] bg-white py-2.5 text-xs font-bold text-[#111111] transition hover:border-brand-500 hover:text-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white dark:hover:border-brand-500 dark:hover:text-brand-500 shadow-2xs"
         >
-            <span>View Role</span>
+            <span>View Position</span>
             <span>→</span>
         </a>
     </div>

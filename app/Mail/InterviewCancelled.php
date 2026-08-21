@@ -20,11 +20,10 @@ class InterviewCancelled extends Mailable
 
     public function build()
     {
+        $typeLabel = $this->interview->type === 'technical' ? 'Technical Interview' : 'HR Interview';
+
         return $this
-            ->subject(
-                'Interview Cancelled - ' .
-                $this->interview->application->job->title
-            )
+            ->subject("{$typeLabel} Cancelled — " . $this->interview->application->job->title)
             ->view('emails.interview-cancelled');
     }
 }

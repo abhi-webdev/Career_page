@@ -2,15 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\CandidateAccountCreated;
 use App\Mail\JobApplied;
 use App\Mail\OfferAccepted;
 use App\Models\Application;
 use App\Models\Employee;
 use App\Models\Job;
 use App\Models\Resume;
+use App\Models\User;
 use App\Notifications\ApplicationStatusNotification;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Str;
@@ -19,12 +22,9 @@ class ApplicationController extends Controller
 {
     public function create(Job $job)
     {
-        $resumes = Resume::where(
-            'user_id',
-            auth()->id()
-        )
-        ->latest()
-        ->get();
+        $resumes = auth()->check()
+            ? Resume::where('user_id', auth()->id())->latest()->get()
+            : collect();
 
         return view(
             'applications.create',
@@ -60,7 +60,104 @@ class ApplicationController extends Controller
 
         /*
         |--------------------------------------------------------------------------
-        | Prevent duplicate application
+        | Flow 1: Guest Application (First-time or Returning)
+        |--------------------------------------------------------------------------
+        */
+
+        if (!auth()->check()) {
+            $validated = $request->validate([
+                'name' => 'required|string|max:255',
+                'email' => 'required|email|max:255',
+                'resume' => 'required|file|mimes:pdf,doc,docx|max:5120',
+                'cover_letter' => 'nullable|string|max:5000',
+            ]);
+
+            $existingUser = User::where('email', strtolower($validated['email']))->first();
+
+            if ($existingUser) {
+                return redirect()
+                    ->route('login')
+                    ->with('warning', 'An account with this email already exists. Please log in with your password to complete your application.')
+                    ->with('email', strtolower($validated['email']));
+            }
+
+            // Generate secure random password and create new candidate account
+            $temporaryPassword = Str::random(12);
+            $newUser = User::create([
+                'name' => $validated['name'],
+                'email' => strtolower($validated['email']),
+                'password' => Hash::make($temporaryPassword),
+                'role' => 'user',
+            ]);
+
+            // Authenticate the new candidate
+            auth()->login($newUser);
+
+            // Upload resume
+            $file = $request->file('resume');
+            $extension = $file->getClientOriginalExtension();
+            $safeBase = preg_replace('/[^A-Za-z0-9_\-]/', '_', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
+            $fileName = time() . '_' . $safeBase . '.' . $extension;
+            $filePath = $file->storeAs('resumes', $fileName, 'public');
+
+            $resume = Resume::create([
+                'user_id' => $newUser->id,
+                'file_name' => $file->getClientOriginalName(),
+                'file_path' => $filePath,
+            ]);
+
+            // Create Application
+            $application = Application::create([
+                'user_id' => $newUser->id,
+                'job_id' => $job->id,
+                'resume_id' => $resume->id,
+                'status' => 'pending',
+                'cover_letter' => $validated['cover_letter'] ?? null,
+            ]);
+
+            $application->load(['job', 'resume', 'user']);
+
+            // Send Account Created email with generated credentials
+            try {
+                Mail::to($newUser->email)->send(new CandidateAccountCreated($newUser, $temporaryPassword));
+            } catch (\Exception $e) {
+                logger()->error('Failed sending candidate account creation email: ' . $e->getMessage());
+            }
+
+            // Send Application Received Confirmation
+            try {
+                Mail::to($newUser->email)->send(new JobApplied($application));
+            } catch (\Exception $e) {
+                logger()->error('Failed sending job application email: ' . $e->getMessage());
+            }
+
+            $newUser->notify(
+                new ApplicationStatusNotification(
+                    'Application Received',
+                    'Your application for ' . $job->title . ' at ' . $job->company . ' has been received.',
+                    'application'
+                )
+            );
+
+            $admins = User::where('role', 'admin')->get();
+            foreach ($admins as $admin) {
+                $admin->notify(
+                    new ApplicationStatusNotification(
+                        'New Application Received',
+                        $newUser->name . ' applied for ' . $job->title . '.',
+                        'application'
+                    )
+                );
+            }
+
+            return redirect()
+                ->route('applications.index')
+                ->with('success', 'Application submitted! We have created your candidate account and emailed your login password to ' . $newUser->email . '.');
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | Flow 2: Authenticated Candidate Application
         |--------------------------------------------------------------------------
         */
 
@@ -83,12 +180,6 @@ class ApplicationController extends Controller
                 );
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Validate
-        |--------------------------------------------------------------------------
-        */
-
         $validated = $request->validate([
             'resume_id' => [
                 'nullable',
@@ -107,52 +198,23 @@ class ApplicationController extends Controller
             ],
         ]);
 
-        /*
-        |--------------------------------------------------------------------------
-        | Resume
-        |--------------------------------------------------------------------------
-        */
-
         $resumeId = null;
 
-        /*
-        |--------------------------------------------------------------------------
-        | Existing Resume
-        |--------------------------------------------------------------------------
-        */
-
         if (!empty($validated['resume_id'])) {
-            $resume = Resume::where(
-                'id',
-                $validated['resume_id']
-            )
-            ->where(
-                'user_id',
-                auth()->id()
-            )
-            ->firstOrFail();
+            $resume = Resume::where('id', $validated['resume_id'])
+                ->where('user_id', auth()->id())
+                ->firstOrFail();
 
             $resumeId = $resume->id;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | New Resume Upload
-        |--------------------------------------------------------------------------
-        */
-
         if ($request->hasFile('resume')) {
             $file = $request->file('resume');
-
             $extension = $file->getClientOriginalExtension();
             $safeBase = preg_replace('/[^A-Za-z0-9_\-]/', '_', pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME));
             $fileName = time() . '_' . $safeBase . '.' . $extension;
 
-            $filePath = $file->storeAs(
-                'resumes',
-                $fileName,
-                'public'
-            );
+            $filePath = $file->storeAs('resumes', $fileName, 'public');
 
             $resume = Resume::create([
                 'user_id' => auth()->id(),
@@ -163,12 +225,6 @@ class ApplicationController extends Controller
             $resumeId = $resume->id;
         }
 
-        /*
-        |--------------------------------------------------------------------------
-        | Require Resume
-        |--------------------------------------------------------------------------
-        */
-
         if (!$resumeId) {
             return back()
                 ->withErrors([
@@ -176,12 +232,6 @@ class ApplicationController extends Controller
                 ])
                 ->withInput();
         }
-
-        /*
-        |--------------------------------------------------------------------------
-        | Create Application
-        |--------------------------------------------------------------------------
-        */
 
         $application = Application::create([
             'user_id' => auth()->id(),
@@ -192,12 +242,6 @@ class ApplicationController extends Controller
         ]);
 
         $application->load(['job', 'resume', 'user']);
-
-        /*
-        |--------------------------------------------------------------------------
-        | Send Confirmation Email & In-App Notifications
-        |--------------------------------------------------------------------------
-        */
 
         try {
             Mail::to(auth()->user()->email)->send(new JobApplied($application));
@@ -213,7 +257,7 @@ class ApplicationController extends Controller
             )
         );
 
-        $admins = \App\Models\User::where('role', 'admin')->get();
+        $admins = User::where('role', 'admin')->get();
         foreach ($admins as $admin) {
             $admin->notify(
                 new ApplicationStatusNotification(

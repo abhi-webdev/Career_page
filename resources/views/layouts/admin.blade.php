@@ -169,6 +169,15 @@
                     <span>Employees</span>
                 </a>
 
+                {{-- Admin Profile --}}
+                <a
+                    href="{{ route('admin.profile') }}"
+                    class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition {{ request()->routeIs('admin.profile*') ? 'bg-brand-500 text-white shadow-xs' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#1A1A1A] dark:hover:text-white' }}"
+                >
+                    <span class="text-base">👤</span>
+                    <span>Admin Profile</span>
+                </a>
+
                 <p class="pt-4 px-3 text-[11px] font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">
                     Public View
                 </p>

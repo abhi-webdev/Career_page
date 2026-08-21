@@ -49,6 +49,59 @@
         >
             @csrf
 
+            {{-- Guest Candidate Identity Information --}}
+            @guest
+                <div class="rounded-2xl border border-brand-500/30 bg-orange-500/5 p-5 dark:border-brand-500/30 dark:bg-[#1A1A1A] space-y-4">
+                    <div class="flex items-center justify-between border-b border-brand-500/20 pb-3">
+                        <div class="flex items-center gap-2">
+                            <span class="flex h-6 w-6 items-center justify-center rounded-lg bg-brand-500 text-xs font-bold text-white">👤</span>
+                            <h2 class="text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                                Candidate Contact Information
+                            </h2>
+                        </div>
+                        <a href="{{ route('login') }}" class="text-xs font-bold text-brand-500 hover:underline">
+                            Already registered? Log in →
+                        </a>
+                    </div>
+
+                    <div class="grid gap-4 sm:grid-cols-2">
+                        <div>
+                            <label for="name" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white mb-1.5">
+                                Full Name <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="name"
+                                name="name"
+                                type="text"
+                                value="{{ old('name') }}"
+                                required
+                                placeholder="e.g. Alex Johnson"
+                                class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#141414] dark:text-white"
+                            >
+                        </div>
+
+                        <div>
+                            <label for="email" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white mb-1.5">
+                                Email Address <span class="text-red-500">*</span>
+                            </label>
+                            <input
+                                id="email"
+                                name="email"
+                                type="email"
+                                value="{{ old('email') }}"
+                                required
+                                placeholder="e.g. alex@example.com"
+                                class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 dark:border-[#262626] dark:bg-[#141414] dark:text-white"
+                            >
+                        </div>
+                    </div>
+
+                    <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                        ✨ First-time applicant? A candidate account will be automatically generated and your temporary access password will be sent to your email.
+                    </p>
+                </div>
+            @endguest
+
             {{-- 1. Select Existing Resume (if any) --}}
             @if($resumes->count())
                 <div>
@@ -83,7 +136,7 @@
             {{-- 2. Upload New Resume --}}
             <div>
                 <label for="resume" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white mb-2">
-                    {{ $resumes->count() ? 'Option 2: Upload New Resume' : 'Upload Resume' }}
+                    {{ $resumes->count() ? 'Option 2: Upload New Resume' : 'Upload Resume' }} <span class="text-red-500">*</span>
                 </label>
 
                 <div class="relative rounded-2xl border-2 border-dashed border-[#E5E5E5] bg-white p-6 text-center transition hover:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A]">
@@ -115,9 +168,9 @@
                 <textarea
                     id="cover_letter"
                     name="cover_letter"
-                    rows="6"
-                    placeholder="Introduce yourself, highlight relevant open-source projects, engineering accomplishments, or portfolio links..."
-                    class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-3 text-sm text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white font-sans"
+                    rows="5"
+                    placeholder="Introduce yourself, highlight relevant projects, engineering accomplishments, or portfolio links..."
+                    class="w-full rounded-xl border border-[#E5E5E5] bg-white px-4 py-3 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:ring-2 focus:ring-brand-500/20 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white font-sans"
                 >{{ old('cover_letter') }}</textarea>
             </div>
 

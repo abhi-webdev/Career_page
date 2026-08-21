@@ -5,6 +5,7 @@ namespace App\Http\Controllers\TR;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use App\Models\Interview;
+use App\Models\User;
 use App\Notifications\ApplicationStatusNotification;
 use App\Mail\InterviewScheduled;
 use App\Mail\InterviewCancelled;
@@ -16,28 +17,83 @@ use Illuminate\Support\Facades\Storage;
 class TRInterviewController extends Controller
 {
     /**
-     * Display list of technical interviews.
+     * Display list of technical interviews assigned to the authenticated TR user (or all if admin).
      */
     public function index(Request $request)
     {
+        $user = auth()->user();
+        $isTR = $user->role === 'tr';
+
         $query = Interview::with(['application.user', 'application.job', 'interviewer'])
             ->where('type', 'technical');
 
-        if ($request->filled('status')) {
+        if ($isTR) {
+            $query->where('interviewer_id', $user->id);
+        }
+
+        // Timeline and status filtering
+        $filter = $request->get('filter', $request->get('status', 'all'));
+
+        if ($filter === 'today') {
+            $query->whereDate('interview_date', today());
+        } elseif ($filter === 'upcoming') {
+            $query->where('interview_date', '>=', today())
+                  ->where('status', 'scheduled');
+        } elseif ($filter === 'completed') {
+            $query->where('status', 'completed');
+        } elseif ($filter === 'cancelled') {
+            $query->where('status', 'cancelled');
+        } elseif ($request->filled('status')) {
             $query->where('status', $request->status);
         }
 
-        $interviews = $query->latest('interview_date')->paginate(10)->withQueryString();
+        if (in_array($filter, ['today', 'upcoming'])) {
+            $interviews = $query->orderBy('interview_date', 'asc')->orderBy('start_time', 'asc')->paginate(10)->withQueryString();
+        } else {
+            $interviews = $query->latest('interview_date')->paginate(10)->withQueryString();
+        }
+
+        $baseCountQuery = Interview::where('type', 'technical');
+        if ($isTR) {
+            $baseCountQuery->where('interviewer_id', $user->id);
+        }
 
         $metrics = [
-            'total' => Interview::where('type', 'technical')->count(),
-            'scheduled' => Interview::where('type', 'technical')->where('status', 'scheduled')->count(),
-            'completed' => Interview::where('type', 'technical')->where('status', 'completed')->count(),
-            'passed' => Interview::where('type', 'technical')->where('result', 'passed')->count(),
-            'failed' => Interview::where('type', 'technical')->where('result', 'failed')->count(),
+            'total' => (clone $baseCountQuery)->count(),
+            'today' => (clone $baseCountQuery)->whereDate('interview_date', today())->count(),
+            'upcoming' => (clone $baseCountQuery)->where('interview_date', '>=', today())->where('status', 'scheduled')->count(),
+            'completed' => (clone $baseCountQuery)->where('status', 'completed')->count(),
+            'cancelled' => (clone $baseCountQuery)->where('status', 'cancelled')->count(),
         ];
 
-        return view('tr.interviews.index', compact('interviews', 'metrics'));
+        return view('tr.interviews.index', compact('interviews', 'metrics', 'filter'));
+    }
+
+    /**
+     * Show detailed view of an assigned technical interview.
+     */
+    public function show(Interview $interview)
+    {
+        $user = auth()->user();
+
+        // Strict Authorization
+        if ($user->role === 'tr') {
+            if ($interview->type !== 'technical' || $interview->interviewer_id !== $user->id) {
+                abort(403, 'Unauthorized access: You can only view technical interviews assigned to you.');
+            }
+        }
+
+        $interview->load([
+            'application.user',
+            'application.job',
+            'application.resume',
+            'application.hrInterview',
+            'interviewer',
+        ]);
+
+        $application = $interview->application;
+
+        return view('tr.interviews.show', compact('interview', 'application'));
     }
 
     /**
@@ -125,6 +181,13 @@ class TRInterviewController extends Controller
             return back()->with('error', 'No technical interview found for this application.');
         }
 
+        // Strict Authorization
+        if (auth()->user()->role === 'tr') {
+            if ($interview->type !== 'technical' || ($interview->interviewer_id && $interview->interviewer_id !== auth()->id())) {
+                abort(403, 'Unauthorized action: You can only complete technical interviews assigned to you.');
+            }
+        }
+
         $attachmentPath = $interview->feedback_attachment_path;
         if ($request->hasFile('feedback_attachment')) {
             $path = $request->file('feedback_attachment')->store('interview_feedback', 'public');
@@ -139,6 +202,7 @@ class TRInterviewController extends Controller
             'feedback_submitted_at' => now(),
         ]);
 
+        // Advance Application Status
         if ($result === 'failed') {
             $application->update(['status' => 'rejected']);
             $application->user->notify(
@@ -159,7 +223,19 @@ class TRInterviewController extends Controller
             );
         }
 
-        return back()->with('success', 'Technical evaluation completed and result recorded.');
+        // Notify All Admins
+        $admins = User::where('role', 'admin')->get();
+        foreach ($admins as $admin) {
+            $admin->notify(
+                new ApplicationStatusNotification(
+                    'Technical Interview Completed',
+                    "Technical interview for {$application->user->name} completed by " . auth()->user()->name . " with recommendation: " . strtoupper($result) . '.',
+                    'interview'
+                )
+            );
+        }
+
+        return back()->with('success', 'Technical evaluation completed and recommendation recorded.');
     }
 
     /**
@@ -170,6 +246,13 @@ class TRInterviewController extends Controller
         $interview = $application->technicalInterview ?? $application->interview;
         if (!$interview || !$interview->feedback_attachment_path) {
             return back()->with('error', 'Evaluation attachment not found.');
+        }
+
+        // Strict Authorization
+        if (auth()->user()->role === 'tr') {
+            if ($interview->type !== 'technical' || ($interview->interviewer_id && $interview->interviewer_id !== auth()->id())) {
+                abort(403, 'Unauthorized access to this attachment.');
+            }
         }
 
         if (!Storage::disk('public')->exists($interview->feedback_attachment_path)) {

@@ -1,300 +1,96 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-
     <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Interview Rescheduled</title>
-
+    <style>
+        body { margin: 0; padding: 0; background: #f8fafc; font-family: Arial, sans-serif; color: #334155; }
+        .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 16px; padding: 32px; border: 1px solid #e2e8f0; }
+        .header { color: #f97316; font-size: 24px; font-weight: bold; }
+        .title { margin-top: 20px; font-size: 20px; font-weight: bold; color: #0f172a; }
+        .details { margin-top: 20px; padding: 20px; background: #fff7ed; border-radius: 12px; border: 1px solid #ffedd5; }
+        .detail { margin-bottom: 10px; font-size: 14px; }
+        .label { font-weight: bold; color: #9a3412; }
+        .button { display: inline-block; margin-top: 24px; padding: 14px 28px; background: #f97316; color: white !important; text-decoration: none; border-radius: 10px; font-weight: bold; font-size: 14px; }
+        .footer { margin-top: 30px; font-size: 13px; color: #64748b; line-height: 1.6; }
+    </style>
 </head>
+<body>
 
-<body
-    style="
-        margin:0;
-        padding:0;
-        background:#f8fafc;
-        font-family:Arial,Helvetica,sans-serif;
-    "
->
+<div class="container">
 
-<div
-    style="
-        max-width:600px;
-        margin:40px auto;
-        background:#ffffff;
-        border:1px solid #e2e8f0;
-        border-radius:16px;
-        overflow:hidden;
-    "
->
-
-    {{-- Header --}}
-
-    <div
-        style="
-            padding:28px;
-            background:#4f46e5;
-            color:#ffffff;
-        "
-    >
-
-        <h1 style="margin:0;font-size:24px;">
-            Interview Rescheduled
-        </h1>
-
-        <p style="margin:8px 0 0;font-size:14px;">
-            Your interview details have been updated.
-        </p>
-
+    <div class="header">
+        {{ $interview->application->job->company }}
     </div>
 
+    <div class="title">
+        {{ $interview->type === 'technical' ? '⚡ Technical Interview Rescheduled' : '📋 HR Interview Rescheduled' }}
+    </div>
 
-    {{-- Content --}}
+    <p>
+        Hello <strong>{{ $interview->application->user->name }}</strong>,
+    </p>
 
-    <div style="padding:32px;">
+    <p>
+        Your <strong>{{ $interview->type === 'technical' ? 'Technical Assessment' : 'HR Screening' }}</strong> interview for the position of <strong>{{ $interview->application->job->title }}</strong> has been rescheduled to a new date and time.
+    </p>
 
-        <p style="font-size:16px;color:#334155;">
+    <div class="details">
 
-            Hello
-            <strong>
-                {{ $interview->application->user->name }}
-            </strong>,
-
-        </p>
-
-
-        <p
-            style="
-                color:#475569;
-                font-size:14px;
-                line-height:1.7;
-            "
-        >
-
-            Your interview for
-
-            <strong>
-                {{ $interview->application->job->title }}
-            </strong>
-
-            at
-
-            <strong>
-                {{ $interview->application->job->company }}
-            </strong>
-
-            has been rescheduled.
-
-        </p>
-
-
-        {{-- New Details --}}
-
-        <div
-            style="
-                margin-top:24px;
-                padding:22px;
-                background:#eef2ff;
-                border:1px solid #c7d2fe;
-                border-radius:12px;
-            "
-        >
-
-            <h2
-                style="
-                    margin:0 0 18px;
-                    font-size:17px;
-                    color:#312e81;
-                "
-            >
-                New Interview Details
-            </h2>
-
-
-            <p
-                style="
-                    margin:10px 0;
-                    font-size:14px;
-                    color:#3730a3;
-                "
-            >
-
-                <strong>Date:</strong>
-
-                {{ $interview->interview_date->format('d M Y') }}
-
-            </p>
-
-
-            <p
-                style="
-                    margin:10px 0;
-                    font-size:14px;
-                    color:#3730a3;
-                "
-            >
-
-                <strong>Time:</strong>
-
-                {{ \Carbon\Carbon::parse($interview->start_time)->format('h:i A') }}
-
-                -
-
-                {{ \Carbon\Carbon::parse($interview->end_time)->format('h:i A') }}
-
-            </p>
-
-
-            <p
-                style="
-                    margin:10px 0;
-                    font-size:14px;
-                    color:#3730a3;
-                "
-            >
-
-                <strong>Platform:</strong>
-                Google Meet
-
-            </p>
-
+        <div class="detail">
+            <span class="label">Position:</span>
+            <strong>{{ $interview->application->job->title }}</strong>
         </div>
 
-
-        {{-- Meeting Button --}}
-
-        <div
-            style="
-                margin-top:28px;
-                text-align:center;
-            "
-        >
-
-            <a
-                href="{{ $interview->meeting_link }}"
-                style="
-                    display:inline-block;
-                    padding:14px 24px;
-                    background:#4f46e5;
-                    color:#ffffff;
-                    text-decoration:none;
-                    border-radius:10px;
-                    font-size:14px;
-                    font-weight:bold;
-                "
-            >
-                Join Google Meet
-            </a>
-
+        <div class="detail">
+            <span class="label">Interview Round:</span>
+            {{ $interview->type === 'technical' ? 'Technical Interview (TR)' : 'HR Interview (HR)' }}
         </div>
 
+        <div class="detail">
+            <span class="label">New Date:</span>
+            {{ $interview->interview_date->format('l, d F Y') }}
+        </div>
 
-        {{-- Notes --}}
+        <div class="detail">
+            <span class="label">New Time:</span>
+            {{ \Carbon\Carbon::parse($interview->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($interview->end_time)->format('h:i A') }}
+        </div>
+
+        <div class="detail">
+            <span class="label">Interviewer:</span>
+            {{ $interview->interviewer ? $interview->interviewer->name : 'Recruitment Team' }}
+        </div>
 
         @if($interview->notes)
-
-            <div
-                style="
-                    margin-top:28px;
-                    padding:18px;
-                    background:#fffbeb;
-                    border:1px solid #fde68a;
-                    border-radius:10px;
-                "
-            >
-
-                <p
-                    style="
-                        margin:0 0 6px;
-                        font-size:13px;
-                        font-weight:bold;
-                        color:#92400e;
-                    "
-                >
-                    Interview Notes
-                </p>
-
-                <p
-                    style="
-                        margin:0;
-                        font-size:13px;
-                        line-height:1.6;
-                        color:#78350f;
-                    "
-                >
-                    {{ $interview->notes }}
-                </p>
-
+            <div class="detail" style="margin-top: 14px; padding-top: 10px; border-top: 1px solid #ffedd5;">
+                <span class="label">Updated Notes:</span><br>
+                <span style="color: #431407;">{{ $interview->notes }}</span>
             </div>
-
         @endif
-
-
-        <p
-            style="
-                margin-top:30px;
-                font-size:14px;
-                line-height:1.7;
-                color:#475569;
-            "
-        >
-
-            Please make a note of the new date and time and join
-            the meeting a few minutes before the scheduled time.
-
-        </p>
-
-
-        <p
-            style="
-                margin-bottom:0;
-                font-size:14px;
-                color:#475569;
-            "
-        >
-
-            Regards,<br>
-
-            <strong>
-                Recruitment Team
-            </strong>
-
-        </p>
 
     </div>
 
+    @if($interview->meeting_link)
+        <div style="text-align: center;">
+            <a href="{{ $interview->meeting_link }}" class="button" target="_blank">
+                📹 Join Google Meet
+            </a>
+        </div>
+    @endif
 
-    {{-- Footer --}}
+    <p style="margin-top: 24px; font-size: 13px; color: #64748b;">
+        Please make a note of the new schedule and join the meeting a few minutes prior to the start time.
+    </p>
 
-    <div
-        style="
-            padding:20px;
-            background:#f8fafc;
-            border-top:1px solid #e2e8f0;
-            text-align:center;
-        "
-    >
-
-        <p
-            style="
-                margin:0;
-                font-size:12px;
-                color:#94a3b8;
-            "
-        >
-            This is an automated email from Job Portal.
-        </p>
-
+    <div class="footer">
+        Regards,<br>
+        <strong>{{ $interview->interviewer ? $interview->interviewer->name : 'Recruitment Team' }}</strong><br>
+        {{ $interview->application->job->company }}
     </div>
 
 </div>
 
 </body>
-
 </html>

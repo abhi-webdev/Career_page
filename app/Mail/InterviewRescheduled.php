@@ -20,11 +20,10 @@ class InterviewRescheduled extends Mailable
 
     public function build()
     {
+        $typeLabel = $this->interview->type === 'technical' ? 'Technical Interview' : 'HR Interview';
+
         return $this
-            ->subject(
-                'Interview Rescheduled - ' .
-                $this->interview->application->job->title
-            )
+            ->subject("{$typeLabel} Rescheduled — " . $this->interview->application->job->title)
             ->view('emails.interview-rescheduled');
     }
 }

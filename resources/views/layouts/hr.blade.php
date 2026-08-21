@@ -129,7 +129,16 @@
                     class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition {{ request()->routeIs('hr.interviews.*') ? 'bg-purple-600 text-white shadow-xs' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#1A1A1A] dark:hover:text-white' }}"
                 >
                     <span class="text-base">📹</span>
-                    <span>HR Interviews</span>
+                    <span>My Interviews</span>
+                </a>
+
+                {{-- HR Profile --}}
+                <a
+                    href="{{ route('hr.profile') }}"
+                    class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition {{ request()->routeIs('hr.profile*') ? 'bg-purple-600 text-white shadow-xs' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#1A1A1A] dark:hover:text-white' }}"
+                >
+                    <span class="text-base">👤</span>
+                    <span>HR Profile</span>
                 </a>
             </nav>
         </div>

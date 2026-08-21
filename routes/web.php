@@ -26,15 +26,28 @@ use App\Http\Controllers\NotificationController;
 |--------------------------------------------------------------------------
 */
 
-Route::get('/', function () {
-    return redirect()->route('jobs.index');
-});
+Route::get('/', [JobController::class, 'home'])
+    ->name('home');
 
 Route::get('/jobs', [JobController::class, 'index'])
     ->name('jobs.index');
 
 Route::get('/jobs/{job}', [JobController::class, 'show'])
     ->name('jobs.show');
+
+// Resume Keyword Analyzer
+Route::get('/resume-analyzer', [\App\Http\Controllers\ResumeAnalyzerController::class, 'index'])
+    ->name('resume-analyzer.index');
+
+Route::post('/resume-analyzer', [\App\Http\Controllers\ResumeAnalyzerController::class, 'analyze'])
+    ->name('resume-analyzer.analyze');
+
+// Candidate Job Application (Public / Guest & Authenticated)
+Route::get('/jobs/{job}/apply', [ApplicationController::class, 'create'])
+    ->name('applications.create');
+
+Route::post('/jobs/{job}/apply', [ApplicationController::class, 'store'])
+    ->name('applications.store');
 
 /*
 |--------------------------------------------------------------------------
@@ -71,13 +84,6 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/me', [AuthController::class, 'me'])
         ->name('me');
-
-    // Candidate Job Application
-    Route::get('/jobs/{job}/apply', [ApplicationController::class, 'create'])
-        ->name('applications.create');
-
-    Route::post('/jobs/{job}/apply', [ApplicationController::class, 'store'])
-        ->name('applications.store');
 
     Route::get('/my-applications', [ApplicationController::class, 'index'])
         ->name('applications.index');
@@ -180,6 +186,9 @@ Route::middleware(['auth', 'role:hr,admin'])
         Route::get('/interviews', [\App\Http\Controllers\HR\HRInterviewController::class, 'index'])
             ->name('interviews.index');
 
+        Route::get('/interviews/{interview}', [\App\Http\Controllers\HR\HRInterviewController::class, 'show'])
+            ->name('interviews.show');
+
         Route::get('/applications/{application}/interview/create', [\App\Http\Controllers\HR\HRInterviewController::class, 'create'])
             ->name('applications.interview.create');
 
@@ -191,6 +200,13 @@ Route::middleware(['auth', 'role:hr,admin'])
 
         Route::get('/applications/{application}/interview/download-attachment', [\App\Http\Controllers\HR\HRInterviewController::class, 'downloadAttachment'])
             ->name('applications.interview.download-attachment');
+
+        // HR Profile
+        Route::get('/profile', [ProfileController::class, 'hrProfile'])
+            ->name('profile');
+
+        Route::put('/profile', [ProfileController::class, 'hrUpdate'])
+            ->name('profile.update');
     });
 
 /*
@@ -220,6 +236,9 @@ Route::middleware(['auth', 'role:tr,admin'])
         Route::get('/interviews', [TRInterviewController::class, 'index'])
             ->name('interviews.index');
 
+        Route::get('/interviews/{interview}', [TRInterviewController::class, 'show'])
+            ->name('interviews.show');
+
         Route::get('/applications/{application}/interview/create', [TRInterviewController::class, 'create'])
             ->name('applications.interview.create');
 
@@ -231,6 +250,13 @@ Route::middleware(['auth', 'role:tr,admin'])
 
         Route::get('/applications/{application}/interview/download-attachment', [TRInterviewController::class, 'downloadAttachment'])
             ->name('applications.interview.download-attachment');
+
+        // TR Profile
+        Route::get('/profile', [ProfileController::class, 'trProfile'])
+            ->name('profile');
+
+        Route::put('/profile', [ProfileController::class, 'trUpdate'])
+            ->name('profile.update');
     });
 
 /*
@@ -328,4 +354,11 @@ Route::middleware(['auth', 'admin'])
 
         Route::get('/employees/{employee}/signed-offer', [EmployeeController::class, 'downloadSignedOffer'])
             ->name('employees.signed-offer');
+
+        // Admin Profile
+        Route::get('/profile', [ProfileController::class, 'adminProfile'])
+            ->name('profile');
+
+        Route::put('/profile', [ProfileController::class, 'adminUpdate'])
+            ->name('profile.update');
     });

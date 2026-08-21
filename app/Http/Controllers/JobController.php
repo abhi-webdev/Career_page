@@ -9,6 +9,37 @@ class JobController extends Controller
 {
     /*
     |--------------------------------------------------------------------------
+    | Public Career Homepage — ADV AIT
+    |--------------------------------------------------------------------------
+    */
+
+    public function home(Request $request)
+    {
+        // Query latest 3 active, non-expired job openings for Advait
+        $latestJobs = Job::query()
+            ->where(function ($q) {
+                $q->whereNull('application_deadline')
+                  ->orWhere('application_deadline', '>=', now());
+            })
+            ->latest()
+            ->take(3)
+            ->get();
+
+        $totalOpenings = Job::query()
+            ->where(function ($q) {
+                $q->whereNull('application_deadline')
+                  ->orWhere('application_deadline', '>=', now());
+            })
+            ->count();
+
+        return view('home', compact(
+            'latestJobs',
+            'totalOpenings'
+        ));
+    }
+
+    /*
+    |--------------------------------------------------------------------------
     | Public Jobs
     |--------------------------------------------------------------------------
     */

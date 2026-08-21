@@ -2,15 +2,20 @@
 
     <div class="mx-auto flex max-w-7xl items-center justify-between px-4 py-3.5 sm:px-6 lg:px-8">
 
-        {{-- Brand Logo --}}
+        {{-- Brand Logo / Wordmark --}}
         <div class="flex items-center gap-8">
-            <a href="{{ route('jobs.index') }}" class="group flex items-center gap-2.5">
-                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-bold text-white shadow-xs transition duration-200 group-hover:scale-105 group-hover:bg-brand-600">
-                    💼
+            <a href="{{ route('home') }}" class="group flex items-center gap-2.5" title="Advait Careers Home">
+                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-brand-500 font-extrabold text-white shadow-xs transition duration-200 group-hover:scale-105 group-hover:bg-brand-600">
+                    A
                 </div>
-                <span class="text-lg font-bold tracking-tight text-[#111111] transition dark:text-white">
-                    Job<span class="text-brand-500">Portal</span>
-                </span>
+                <div class="flex flex-col">
+                    <span class="text-base font-extrabold tracking-tight text-[#111111] transition dark:text-white leading-none">
+                        Advait
+                    </span>
+                    <span class="text-[9px] font-bold uppercase tracking-widest text-[#6B6B6B] dark:text-[#A1A1A1]">
+                        Careers
+                    </span>
+                </div>
             </a>
 
             {{-- Desktop Primary Navigation --}}
@@ -19,7 +24,21 @@
                     href="{{ route('jobs.index') }}"
                     class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('jobs.*') && !request()->routeIs('admin.*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
                 >
-                    Explore Jobs
+                    Jobs
+                </a>
+
+                <a
+                    href="{{ route('resume-analyzer.index') }}"
+                    class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('resume-analyzer.*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
+                >
+                    Resume Analyzer
+                </a>
+
+                <a
+                    href="{{ route('home') }}#why-advait"
+                    class="rounded-xl px-3.5 py-2 text-sm font-semibold text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white transition"
+                >
+                    Why Advait
                 </a>
 
                 @auth
@@ -242,7 +261,21 @@
                 href="{{ route('jobs.index') }}"
                 class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('jobs.*') && !request()->routeIs('admin.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
             >
-                Explore Jobs
+                Jobs
+            </a>
+
+            <a
+                href="{{ route('resume-analyzer.index') }}"
+                class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('resume-analyzer.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
+            >
+                Resume Analyzer
+            </a>
+
+            <a
+                href="{{ route('home') }}#why-advait"
+                class="block rounded-xl px-3 py-2 text-sm font-semibold text-[#6B6B6B] dark:text-[#A1A1A1]"
+            >
+                Why Advait
             </a>
 
             @auth

@@ -10,21 +10,34 @@ class TRApplicationController extends Controller
 {
     /**
      * Display technical candidate pipeline for TR.
-     * Shows candidates for jobs that require technical evaluation who cleared HR.
+     * Shows candidates for jobs that require technical evaluation.
      */
     public function index(Request $request)
     {
-        $query = Application::with(['user', 'job', 'resume', 'hrInterview', 'technicalInterview'])
+        $query = Application::with(['user', 'job', 'resume', 'hrInterview.interviewer', 'technicalInterview.interviewer'])
             ->whereHas('job', function ($jq) {
                 $jq->where('technical_interview_required', true);
-            })
-            ->where(function ($q) {
-                $q->whereIn('status', ['technical_interview', 'admin_review', 'selected'])
-                  ->orWhereHas('technicalInterview');
             });
 
-        if ($request->filled('status')) {
-            $query->where('status', $request->status);
+        $stage = $request->get('stage', $request->get('status', 'all'));
+
+        if ($stage === 'hr_passed') {
+            // Cleared HR round, ready for technical scheduling
+            $query->where('status', 'technical_interview')
+                  ->whereDoesntHave('technicalInterview');
+        } elseif ($stage === 'scheduled') {
+            // Technical interview scheduled
+            $query->whereHas('technicalInterview', fn($tq) => $tq->where('status', 'scheduled'));
+        } elseif ($stage === 'completed') {
+            // Technical interview completed
+            $query->whereHas('technicalInterview', fn($tq) => $tq->where('status', 'completed'));
+        } elseif ($stage === 'admin_review') {
+            // Passed technical, under final review
+            $query->where('status', 'admin_review');
+        } elseif ($stage === 'selected') {
+            $query->where('status', 'selected');
+        } elseif ($stage === 'rejected') {
+            $query->where('status', 'rejected');
         }
 
         if ($request->filled('search')) {
@@ -42,14 +55,19 @@ class TRApplicationController extends Controller
 
         $applications = $query->latest()->paginate(10)->withQueryString();
 
+        $baseTechQuery = Application::whereHas('job', fn($jq) => $jq->where('technical_interview_required', true));
+
         $stageCounts = [
-            'total' => (clone $query)->count(),
-            'pending_eval' => Application::whereHas('job', fn($jq) => $jq->where('technical_interview_required', true))->where('status', 'technical_interview')->count(),
-            'admin_review' => Application::whereHas('job', fn($jq) => $jq->where('technical_interview_required', true))->where('status', 'admin_review')->count(),
-            'selected' => Application::whereHas('job', fn($jq) => $jq->where('technical_interview_required', true))->where('status', 'selected')->count(),
+            'total' => (clone $baseTechQuery)->count(),
+            'hr_passed' => (clone $baseTechQuery)->where('status', 'technical_interview')->whereDoesntHave('technicalInterview')->count(),
+            'scheduled' => (clone $baseTechQuery)->whereHas('technicalInterview', fn($tq) => $tq->where('status', 'scheduled'))->count(),
+            'completed' => (clone $baseTechQuery)->whereHas('technicalInterview', fn($tq) => $tq->where('status', 'completed'))->count(),
+            'admin_review' => (clone $baseTechQuery)->where('status', 'admin_review')->count(),
+            'selected' => (clone $baseTechQuery)->where('status', 'selected')->count(),
+            'rejected' => (clone $baseTechQuery)->where('status', 'rejected')->count(),
         ];
 
-        return view('tr.applications.index', compact('applications', 'stageCounts'));
+        return view('tr.applications.index', compact('applications', 'stageCounts', 'stage'));
     }
 
     /**
@@ -61,8 +79,8 @@ class TRApplicationController extends Controller
             'user',
             'job',
             'resume',
-            'hrInterview',
-            'technicalInterview',
+            'hrInterview.interviewer',
+            'technicalInterview.interviewer',
             'interviews.interviewer',
         ]);
 

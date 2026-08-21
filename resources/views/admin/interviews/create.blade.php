@@ -15,14 +15,14 @@
     </div>
 
     <div>
-        <span class="text-xs font-bold uppercase tracking-wider text-brand-500">
-            Interview Assessment
+        <span class="text-xs font-bold uppercase tracking-wider {{ $type === 'technical' ? 'text-blue-600 dark:text-blue-400' : 'text-purple-600 dark:text-purple-400' }}">
+            {{ $type === 'technical' ? '⚡ Technical Assessment Round' : 'Mandatory HR Screening Round' }}
         </span>
         <h1 class="mt-1 text-2xl font-extrabold tracking-tight text-[#111111] sm:text-3xl dark:text-white">
-            Schedule Candidate Interview
+            {{ $targetInterview && $targetInterview->status === 'scheduled' ? 'Reschedule' : 'Schedule' }} {{ $type === 'technical' ? 'Technical' : 'HR' }} Interview
         </h1>
         <p class="mt-1 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-            Set appointment date, start & end time, and Google Meet URL for {{ $application->user->name }}.
+            Assign an authorized interviewer and set date, time, and Google Meet URL for {{ $application->user->name }}.
         </p>
     </div>
 
@@ -42,7 +42,7 @@
                     {{ $application->job->title }}
                 </p>
                 <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
-                    {{ $application->job->company }}
+                    {{ $application->job->company }} • {{ $application->job->technical_interview_required ? 'Technical Job' : 'Non-Technical Job' }}
                 </p>
             </div>
         </div>
@@ -63,6 +63,44 @@
     {{-- Form --}}
     <form action="{{ route('admin.applications.interview.store', $application) }}" method="POST" class="rounded-2xl border border-[#E5E5E5] bg-white p-6 sm:p-8 dark:border-[#262626] dark:bg-[#141414] shadow-xs space-y-5">
         @csrf
+        <input type="hidden" name="type" value="{{ $type }}">
+
+        {{-- Interviewer Assignment Dropdown --}}
+        <div>
+            <label for="interviewer_id" class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                {{ $type === 'technical' ? 'Assign Technical Interviewer *' : 'Assign HR Interviewer *' }}
+            </label>
+            <select
+                id="interviewer_id"
+                name="interviewer_id"
+                required
+                class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+            >
+                <option value="">-- Select {{ $type === 'technical' ? 'TR Recruiter' : 'HR Specialist' }} --</option>
+                @if($type === 'technical')
+                    @foreach($trInterviewers as $tr)
+                        <option
+                            value="{{ $tr->id }}"
+                            {{ old('interviewer_id', optional($targetInterview)->interviewer_id) == $tr->id ? 'selected' : '' }}
+                        >
+                            {{ $tr->name }} ({{ $tr->email }}) — Technical Recruiter
+                        </option>
+                    @endforeach
+                @else
+                    @foreach($hrInterviewers as $hr)
+                        <option
+                            value="{{ $hr->id }}"
+                            {{ old('interviewer_id', optional($targetInterview)->interviewer_id) == $hr->id ? 'selected' : '' }}
+                        >
+                            {{ $hr->name }} ({{ $hr->email }}) — HR Recruiter
+                        </option>
+                    @endforeach
+                @endif
+            </select>
+            <p class="mt-1 text-[10px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                {{ $type === 'technical' ? 'Only TR employees can be assigned to conduct technical rounds.' : 'Only HR employees can be assigned to conduct HR rounds.' }}
+            </p>
+        </div>
 
         {{-- Date --}}
         <div>
@@ -73,7 +111,7 @@
                 id="interview_date"
                 name="interview_date"
                 type="date"
-                value="{{ old('interview_date', optional($application->interview)->interview_date?->format('Y-m-d')) }}"
+                value="{{ old('interview_date', optional($targetInterview)->interview_date?->format('Y-m-d')) }}"
                 min="{{ now()->format('Y-m-d') }}"
                 required
                 class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
@@ -90,7 +128,7 @@
                     id="start_time"
                     name="start_time"
                     type="time"
-                    value="{{ old('start_time', optional($application->interview)->start_time) }}"
+                    value="{{ old('start_time', optional($targetInterview)->start_time) }}"
                     required
                     class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
                 >
@@ -104,7 +142,7 @@
                     id="end_time"
                     name="end_time"
                     type="time"
-                    value="{{ old('end_time', optional($application->interview)->end_time) }}"
+                    value="{{ old('end_time', optional($targetInterview)->end_time) }}"
                     required
                     class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
                 >
@@ -120,13 +158,16 @@
                 id="meeting_link"
                 name="meeting_link"
                 type="url"
-                value="{{ old('meeting_link', optional($application->interview)->meeting_link) }}"
+                value="{{ old('meeting_link', optional($targetInterview)->meeting_link) }}"
                 placeholder="https://meet.google.com/xxx-xxxx-xxx"
                 required
                 class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
             >
             <p class="mt-1 text-[10px] text-[#6B6B6B] dark:text-[#A1A1A1]">
-                Candidate and interviewers will receive this link automatically via email.
+                Candidate and assigned interviewer will receive this meeting link automatically with direct one-click access from their portals.
+            </p>
+            <p class="mt-1 text-[10px] font-semibold text-brand-500">
+                💡 Google Meet Tip: Set meeting access to "Open to all with link" or invite the interviewer's Google account so they can enter without requiring host manual admission.
             </p>
         </div>
 
@@ -139,9 +180,9 @@
                 id="notes"
                 name="notes"
                 rows="4"
-                placeholder="e.g. Technical live coding round on system architecture..."
+                placeholder="e.g. Focus on communication and system design assessment..."
                 class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
-            >{{ old('notes', optional($application->interview)->notes) }}</textarea>
+            >{{ old('notes', optional($targetInterview)->notes) }}</textarea>
         </div>
 
         {{-- Actions --}}
@@ -154,9 +195,9 @@
             </a>
             <button
                 type="submit"
-                class="rounded-xl bg-brand-500 px-6 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
+                class="rounded-xl {{ $type === 'technical' ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700' }} px-6 py-2.5 text-xs font-bold text-white shadow-xs transition"
             >
-                {{ $application->interview ? 'Update Schedule →' : 'Schedule Interview →' }}
+                {{ $targetInterview && $targetInterview->status === 'scheduled' ? 'Update Schedule →' : 'Schedule Interview →' }}
             </button>
         </div>
     </form>

@@ -1,7 +1,7 @@
 @extends('layouts.tr')
 
-@section('title', 'Candidate Pipeline')
-@section('header_title', 'Engineering Candidates & Technical Screening')
+@section('title', 'Technical Candidate Pipeline')
+@section('header_title', 'Engineering Pipeline & Candidate Pool')
 
 @section('content')
 
@@ -9,29 +9,32 @@
 
     <div>
         <h1 class="text-xl font-bold tracking-tight text-[#111111] dark:text-white">
-            Engineering Candidate Pool
+            Technical Candidate Pipeline
         </h1>
         <p class="mt-0.5 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-            Screen candidates, inspect resumes, schedule interviews, and submit technical evaluations.
+            Track engineering candidates for technical roles through HR clearance, technical evaluation, and admin review.
         </p>
     </div>
 
-    {{-- Filter Tabs --}}
+    {{-- Filter Pipeline Tabs --}}
     <div class="flex flex-wrap items-center gap-2 border-b border-[#E5E5E5] pb-4 dark:border-[#262626]">
-        @php $curr = request('status'); @endphp
-        <a href="{{ route('tr.applications.index') }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ !$curr ? 'bg-blue-600 text-white' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
-            All ({{ $stageCounts['total'] }})
+        @php $curr = $stage ?? request('stage', 'all'); @endphp
+        <a href="{{ route('tr.applications.index', ['stage' => 'all']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'all' ? 'bg-blue-600 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+            All Technical ({{ $stageCounts['total'] }})
         </a>
-        <a href="{{ route('tr.applications.index', ['status' => 'pending']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'pending' ? 'bg-amber-500 text-white' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
-            Pending ({{ $stageCounts['pending'] }})
+        <a href="{{ route('tr.applications.index', ['stage' => 'hr_passed']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'hr_passed' ? 'bg-purple-600 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+            HR Passed / Ready ({{ $stageCounts['hr_passed'] }})
         </a>
-        <a href="{{ route('tr.applications.index', ['status' => 'shortlisted']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'shortlisted' ? 'bg-blue-600 text-white' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
-            Shortlisted ({{ $stageCounts['shortlisted'] }})
+        <a href="{{ route('tr.applications.index', ['stage' => 'scheduled']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'scheduled' ? 'bg-blue-600 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+            Interview Scheduled ({{ $stageCounts['scheduled'] }})
         </a>
-        <a href="{{ route('tr.applications.index', ['status' => 'interview']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'interview' ? 'bg-brand-500 text-white' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
-            Interview Round ({{ $stageCounts['interview'] }})
+        <a href="{{ route('tr.applications.index', ['stage' => 'completed']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'completed' ? 'bg-emerald-600 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+            Completed ({{ $stageCounts['completed'] }})
         </a>
-        <a href="{{ route('tr.applications.index', ['status' => 'selected']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'selected' ? 'bg-emerald-600 text-white' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+        <a href="{{ route('tr.applications.index', ['stage' => 'admin_review']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'admin_review' ? 'bg-brand-500 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
+            Admin Review ({{ $stageCounts['admin_review'] }})
+        </a>
+        <a href="{{ route('tr.applications.index', ['stage' => 'selected']) }}" class="rounded-xl px-3.5 py-1.5 text-xs font-bold transition {{ $curr === 'selected' ? 'bg-emerald-600 text-white shadow-xs' : 'border border-[#E5E5E5] bg-white text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]' }}">
             Selected ({{ $stageCounts['selected'] }})
         </a>
     </div>
@@ -46,7 +49,8 @@
                             <th class="px-6 py-3.5">Candidate</th>
                             <th class="px-6 py-3.5">Target Role</th>
                             <th class="px-6 py-3.5">Resume</th>
-                            <th class="px-6 py-3.5">Stage</th>
+                            <th class="px-6 py-3.5">Technical Stage</th>
+                            <th class="px-6 py-3.5">Assigned TR</th>
                             <th class="px-6 py-3.5 text-right">Action</th>
                         </tr>
                     </thead>
@@ -75,16 +79,35 @@
                                     @endif
                                 </td>
                                 <td class="px-6 py-4">
-                                    <span class="inline-flex rounded-full border px-2.5 py-0.5 text-[11px] font-bold capitalize bg-blue-500/10 text-blue-600 border-blue-500/20">
-                                        {{ $app->status }}
-                                    </span>
+                                    @if($app->technicalInterview)
+                                        <span class="inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase {{ $app->technicalInterview->status === 'completed' ? ($app->technicalInterview->result === 'passed' ? 'bg-emerald-500/10 text-emerald-600 border-emerald-500/20' : 'bg-red-500/10 text-red-600 border-red-500/20') : 'bg-blue-500/10 text-blue-600 border-blue-500/20' }}">
+                                            {{ $app->technicalInterview->status === 'completed' ? 'Tech ' . $app->technicalInterview->result : 'Tech ' . $app->technicalInterview->status }}
+                                        </span>
+                                    @elseif($app->status === 'technical_interview')
+                                        <span class="inline-flex rounded-full border border-purple-500/20 bg-purple-500/10 px-2.5 py-0.5 text-[10px] font-bold text-purple-700">
+                                            HR Cleared • Ready
+                                        </span>
+                                    @else
+                                        <span class="inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold capitalize bg-slate-500/10 text-slate-600 border-slate-500/20">
+                                            {{ $app->status }}
+                                        </span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4">
+                                    @if($app->technicalInterview && $app->technicalInterview->interviewer)
+                                        <span class="text-xs font-semibold text-blue-600 dark:text-blue-400">
+                                            {{ $app->technicalInterview->interviewer->name }}
+                                        </span>
+                                    @else
+                                        <span class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">Unassigned</span>
+                                    @endif
                                 </td>
                                 <td class="px-6 py-4 text-right">
                                     <a
                                         href="{{ route('tr.applications.show', $app) }}"
                                         class="inline-flex items-center gap-1 rounded-lg bg-blue-600 px-3 py-1.5 text-xs font-bold text-white shadow-xs hover:bg-blue-700 transition"
                                     >
-                                        <span>Evaluate</span>
+                                        <span>Candidate Dossier</span>
                                         <span>→</span>
                                     </a>
                                 </td>
@@ -98,7 +121,7 @@
             </div>
         @else
             <div class="py-16 text-center text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                No applications in this filter.
+                No technical candidates found in this stage.
             </div>
         @endif
     </div>

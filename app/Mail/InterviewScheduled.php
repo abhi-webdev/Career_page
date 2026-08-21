@@ -20,11 +20,10 @@ class InterviewScheduled extends Mailable
 
     public function build()
     {
+        $typeLabel = $this->interview->type === 'technical' ? 'Technical Interview' : 'HR Interview';
+
         return $this
-            ->subject(
-                'Interview Scheduled - ' .
-                $this->interview->application->job->title
-            )
+            ->subject("{$typeLabel} Scheduled — " . $this->interview->application->job->title)
             ->view('emails.interview-scheduled');
     }
 }

@@ -1,7 +1,7 @@
 @extends('layouts.hr')
 
-@section('title', 'HR Overview')
-@section('header_title', 'Human Resources Operations & Onboarding')
+@section('title', 'HR Dashboard')
+@section('header_title', 'HR Overview & Interview Operations')
 
 @section('content')
 
@@ -10,139 +10,222 @@
     {{-- Metric Stat Cards Row --}}
     <div class="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
 
-        {{-- Total Employees --}}
+        {{-- Today's Interviews --}}
         <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Total Staff</span>
-                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/10 text-sm font-bold text-purple-600 dark:text-purple-400">👔</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Today's Interviews</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-purple-500/10 text-sm font-bold text-purple-600 dark:text-purple-400">📅</span>
             </div>
-            <p class="mt-3 text-3xl font-extrabold tracking-tight text-[#111111] dark:text-white">{{ $metrics['totalEmployees'] }}</p>
-            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Hired employee directory</p>
+            <p class="mt-3 text-3xl font-extrabold tracking-tight text-purple-600 dark:text-purple-400">{{ $metrics['todayInterviews'] }}</p>
+            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Scheduled for today</p>
         </div>
 
-        {{-- Upcoming Joinings --}}
+        {{-- Upcoming Scheduled --}}
         <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Upcoming Joinings</span>
-                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10 text-sm font-bold text-brand-500">📅</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Upcoming Scheduled</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10 text-sm font-bold text-brand-500">⏳</span>
             </div>
-            <p class="mt-3 text-3xl font-extrabold tracking-tight text-brand-500">{{ $metrics['upcomingJoinings'] }}</p>
-            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Awaiting start date</p>
+            <p class="mt-3 text-3xl font-extrabold tracking-tight text-brand-500">{{ $metrics['upcomingInterviews'] }}</p>
+            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Awaiting evaluation</p>
         </div>
 
-        {{-- Active Employees --}}
+        {{-- Completed HR Interviews --}}
         <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Active Staff</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Completed</span>
                 <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-emerald-500/10 text-sm font-bold text-emerald-600 dark:text-emerald-400">✓</span>
             </div>
-            <p class="mt-3 text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">{{ $metrics['activeEmployees'] }}</p>
-            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Joined and confirmed</p>
+            <p class="mt-3 text-3xl font-extrabold tracking-tight text-emerald-600 dark:text-emerald-400">{{ $metrics['completedInterviews'] }}</p>
+            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Evaluations submitted</p>
         </div>
 
-        {{-- Pending Onboarding --}}
+        {{-- Total Assigned --}}
         <div class="rounded-2xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between">
-                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Pending Onboarding</span>
-                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-amber-500/10 text-sm font-bold text-amber-600 dark:text-amber-400">⏳</span>
+                <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">Total Assigned</span>
+                <span class="flex h-8 w-8 items-center justify-center rounded-xl bg-blue-500/10 text-sm font-bold text-blue-600 dark:text-blue-400">📋</span>
             </div>
-            <p class="mt-3 text-3xl font-extrabold tracking-tight text-amber-600 dark:text-amber-400">{{ $metrics['pendingEmployees'] }}</p>
-            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Pending induction</p>
+            <p class="mt-3 text-3xl font-extrabold tracking-tight text-[#111111] dark:text-white">{{ $metrics['totalAssigned'] }}</p>
+            <p class="mt-1 text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">All assigned HR rounds</p>
         </div>
 
     </div>
 
-    {{-- Main 2-Column Section --}}
+    {{-- Today's Scheduled Interviews (High Priority) --}}
+    <div class="rounded-2xl border border-purple-500/30 bg-purple-500/5 p-6 dark:border-purple-500/30 dark:bg-[#141414] shadow-xs">
+        <div class="flex items-center justify-between border-b border-purple-500/20 pb-4">
+            <div class="flex items-center gap-2.5">
+                <span class="flex h-7 w-7 items-center justify-center rounded-lg bg-purple-600 text-xs font-bold text-white">⚡</span>
+                <div>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                        Today's Scheduled HR Interviews
+                    </h2>
+                    <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                        {{ now()->format('l, d F Y') }} • Assigned to you
+                    </p>
+                </div>
+            </div>
+            <a href="{{ route('hr.interviews.index', ['filter' => 'today']) }}" class="text-xs font-bold text-purple-600 hover:underline">
+                View All Today ({{ $metrics['todayInterviews'] }}) →
+            </a>
+        </div>
+
+        @if($todayInterviews->count() > 0)
+            <div class="mt-4 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                @foreach($todayInterviews as $interview)
+                    <div class="rounded-xl border border-purple-500/30 bg-white p-4 dark:border-purple-500/30 dark:bg-[#1A1A1A] space-y-3">
+                        <div class="flex items-start justify-between">
+                            <div>
+                                <p class="text-xs font-bold text-[#111111] dark:text-white">
+                                    {{ $interview->application->user->name }}
+                                </p>
+                                <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                    {{ $interview->application->job->title }}
+                                </p>
+                            </div>
+                            <span class="rounded-full px-2 py-0.5 text-[9px] font-bold uppercase {{ $interview->status === 'completed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-purple-600 text-white' }}">
+                                {{ $interview->status === 'completed' ? ($interview->result ?? 'Completed') : 'Today' }}
+                            </span>
+                        </div>
+
+                        <div class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1] flex items-center justify-between pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
+                            <span>🕒 Time:</span>
+                            <span class="font-bold text-[#111111] dark:text-white">
+                                {{ \Carbon\Carbon::parse($interview->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($interview->end_time)->format('h:i A') }}
+                            </span>
+                        </div>
+
+                        <div class="grid grid-cols-2 gap-2 pt-1">
+                            @if($interview->meeting_link)
+                                <a
+                                    href="{{ $interview->meeting_link }}"
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    class="inline-flex items-center justify-center gap-1 rounded-lg bg-purple-600 py-1.5 text-xs font-bold text-white hover:bg-purple-700 transition"
+                                >
+                                    <span>📹 Join Meet</span>
+                                    <span>↗</span>
+                                </a>
+                            @else
+                                <span class="rounded-lg bg-[#F7F7F7] py-1.5 text-center text-xs text-slate-400">No Meet Link</span>
+                            @endif
+
+                            <a
+                                href="{{ route('hr.interviews.show', $interview) }}"
+                                class="inline-flex items-center justify-center gap-1 rounded-lg border border-[#E5E5E5] bg-white py-1.5 text-xs font-bold text-[#111111] hover:bg-[#F7F7F7] dark:border-[#262626] dark:bg-[#141414] dark:text-white transition"
+                            >
+                                <span>View / Eval →</span>
+                            </a>
+                        </div>
+                    </div>
+                @endforeach
+            </div>
+        @else
+            <div class="py-8 text-center text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+                🎉 No interviews scheduled for today. Check upcoming appointments below.
+            </div>
+        @endif
+    </div>
+
+    {{-- Main 2-Column Section (Upcoming vs Recent Completed) --}}
     <div class="grid gap-6 lg:grid-cols-12">
 
-        {{-- Upcoming Joinings Schedule --}}
+        {{-- Upcoming Interviews List --}}
         <div class="lg:col-span-6 rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-4 dark:border-[#262626]">
                 <div class="flex items-center gap-2">
                     <span class="text-base">📅</span>
                     <h2 class="text-sm font-bold text-[#111111] dark:text-white">
-                        Upcoming Joining Schedule
+                        Upcoming HR Interviews
                     </h2>
                 </div>
-                <a href="{{ route('hr.employees.index', ['status' => 'pending']) }}" class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
+                <a href="{{ route('hr.interviews.index', ['filter' => 'upcoming']) }}" class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
                     View All →
                 </a>
             </div>
 
-            @if($upcomingJoinings->count() > 0)
+            @if($upcomingInterviews->count() > 0)
                 <div class="mt-4 divide-y divide-[#E5E5E5] dark:divide-[#262626]">
-                    @foreach($upcomingJoinings as $joining)
+                    @foreach($upcomingInterviews as $interview)
                         <div class="py-3.5 flex items-center justify-between gap-4">
-                            <div class="flex items-center gap-3">
-                                <div class="flex h-9 w-9 items-center justify-center rounded-xl bg-purple-500/10 font-bold text-purple-600 text-xs font-mono">
-                                    {{ $joining->employee_code }}
-                                </div>
-                                <div>
-                                    <p class="text-xs font-bold text-[#111111] dark:text-white">
-                                        {{ $joining->user->name }}
-                                    </p>
-                                    <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
-                                        {{ $joining->application->job->title }} • {{ $joining->application->job->company }}
-                                    </p>
-                                </div>
+                            <div>
+                                <p class="text-xs font-bold text-[#111111] dark:text-white">
+                                    {{ $interview->application->user->name }}
+                                </p>
+                                <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                    {{ $interview->application->job->title }} • {{ $interview->application->job->company }}
+                                </p>
                             </div>
 
-                            <div class="text-right">
-                                <span class="inline-flex rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold text-purple-600 dark:text-purple-400 border border-purple-500/20">
-                                    {{ $joining->joining_date->format('d M Y') }}
-                                </span>
-                                <p class="text-[10px] text-[#6B6B6B] dark:text-[#A1A1A1] mt-0.5">
-                                    {{ $joining->joining_date->diffForHumans() }}
-                                </p>
+                            <div class="text-right flex items-center gap-3">
+                                <div>
+                                    <span class="inline-flex rounded-full bg-purple-500/10 px-2.5 py-0.5 text-[11px] font-bold text-purple-600 dark:text-purple-400 border border-purple-500/20">
+                                        {{ $interview->interview_date->format('d M Y') }}
+                                    </span>
+                                    <p class="text-[10px] text-[#6B6B6B] dark:text-[#A1A1A1] mt-0.5">
+                                        {{ \Carbon\Carbon::parse($interview->start_time)->format('h:i A') }}
+                                    </p>
+                                </div>
+                                <a
+                                    href="{{ route('hr.interviews.show', $interview) }}"
+                                    class="rounded-lg bg-purple-600 px-3 py-1.5 text-xs font-bold text-white hover:bg-purple-700 transition"
+                                >
+                                    View
+                                </a>
                             </div>
                         </div>
                     @endforeach
                 </div>
             @else
                 <div class="py-12 text-center text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                    ✨ No pending joinings scheduled in the immediate pipeline.
+                    No upcoming scheduled interviews in your queue.
                 </div>
             @endif
         </div>
 
-        {{-- Recent Employees Added --}}
+        {{-- Recently Completed Evaluations --}}
         <div class="lg:col-span-6 rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
             <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-4 dark:border-[#262626]">
                 <div class="flex items-center gap-2">
-                    <span class="text-base">👔</span>
+                    <span class="text-base">✓</span>
                     <h2 class="text-sm font-bold text-[#111111] dark:text-white">
-                        Recently Hired Staff
+                        Recent Evaluation History
                     </h2>
                 </div>
-                <a href="{{ route('hr.employees.index') }}" class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
-                    Directory →
+                <a href="{{ route('hr.interviews.index', ['filter' => 'completed']) }}" class="text-xs font-bold text-purple-600 dark:text-purple-400 hover:underline">
+                    Completed ({{ $metrics['completedInterviews'] }}) →
                 </a>
             </div>
 
-            @if($recentEmployees->count() > 0)
+            @if($completedInterviews->count() > 0)
                 <div class="mt-4 divide-y divide-[#E5E5E5] dark:divide-[#262626]">
-                    @foreach($recentEmployees as $emp)
-                        <div class="py-3 flex items-center justify-between gap-4">
+                    @foreach($completedInterviews as $interview)
+                        <div class="py-3.5 flex items-center justify-between gap-4">
                             <div>
                                 <p class="text-xs font-bold text-[#111111] dark:text-white">
-                                    {{ $emp->user->name }}
+                                    {{ $interview->application->user->name }}
                                 </p>
                                 <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
-                                    {{ $emp->employee_code }} • {{ $emp->application->job->title }}
+                                    {{ $interview->application->job->title }}
                                 </p>
                             </div>
-                            <a
-                                href="{{ route('hr.employees.show', $emp) }}"
-                                class="inline-flex items-center gap-1 text-xs font-bold text-purple-600 hover:underline"
-                            >
-                                <span>Profile →</span>
-                            </a>
+                            <div class="text-right">
+                                <span class="inline-flex rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase {{ $interview->result === 'passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600' }}">
+                                    {{ $interview->result ?? 'Completed' }}
+                                </span>
+                                @if($interview->feedback_submitted_at)
+                                    <p class="text-[10px] text-[#6B6B6B] dark:text-[#A1A1A1] mt-0.5">
+                                        {{ $interview->feedback_submitted_at->diffForHumans() }}
+                                    </p>
+                                @endif
+                            </div>
                         </div>
                     @endforeach
                 </div>
             @else
                 <div class="py-12 text-center text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                    No employees on record yet.
+                    No completed interviews yet.
                 </div>
             @endif
         </div>

@@ -120,7 +120,16 @@
                     class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition {{ request()->routeIs('tr.interviews.*') ? 'bg-blue-600 text-white shadow-xs' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#1A1A1A] dark:hover:text-white' }}"
                 >
                     <span class="text-base">📹</span>
-                    <span>Technical Interviews</span>
+                    <span>My Technical Interviews</span>
+                </a>
+
+                {{-- TR Profile --}}
+                <a
+                    href="{{ route('tr.profile') }}"
+                    class="flex items-center gap-3 rounded-xl px-3.5 py-2.5 text-sm font-semibold transition {{ request()->routeIs('tr.profile*') ? 'bg-blue-600 text-white shadow-xs' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#1A1A1A] dark:hover:text-white' }}"
+                >
+                    <span class="text-base">👤</span>
+                    <span>TR Profile</span>
                 </a>
             </nav>
         </div>

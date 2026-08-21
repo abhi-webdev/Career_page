@@ -9,36 +9,53 @@ use App\Models\Interview;
 class TRDashboardController extends Controller
 {
     /**
-     * Display Technical Recruiter Dashboard.
+     * Display Technical Recruiter Dashboard with scoped interviews, today's schedule, and pipeline metrics.
      */
     public function index()
     {
+        $userId = auth()->id();
+
+        // Scoped technical interviews assigned to authenticated TR user
+        $baseInterviewQuery = Interview::where('type', 'technical')->where('interviewer_id', $userId);
+
         $metrics = [
-            'totalCandidates' => Application::count(),
-            'scheduledInterviews' => Interview::where('status', 'scheduled')->count(),
-            'completedInterviews' => Interview::where('status', 'completed')->count(),
-            'pendingEvaluations' => Interview::where('status', 'completed')
-                ->whereNull('admin_feedback')
-                ->count(),
-            'selectedCandidates' => Application::where('status', 'selected')->count(),
+            'totalCandidates' => Application::whereHas('job', fn($q) => $q->where('technical_interview_required', true))->count(),
+            'todayInterviews' => (clone $baseInterviewQuery)->whereDate('interview_date', today())->count(),
+            'scheduledInterviews' => (clone $baseInterviewQuery)->where('interview_date', '>=', today())->where('status', 'scheduled')->count(),
+            'completedInterviews' => (clone $baseInterviewQuery)->where('status', 'completed')->count(),
+            'passedInterviews' => (clone $baseInterviewQuery)->where('status', 'completed')->where('result', 'passed')->count(),
         ];
 
+        // Today's technical interviews sorted by start time
+        $todayInterviews = (clone $baseInterviewQuery)
+            ->whereDate('interview_date', today())
+            ->with(['application.user', 'application.job'])
+            ->orderBy('start_time', 'asc')
+            ->get();
+
         // Upcoming technical interviews
-        $upcomingInterviews = Interview::with(['application.user', 'application.job'])
+        $upcomingInterviews = (clone $baseInterviewQuery)
+            ->where('interview_date', '>=', today())
             ->where('status', 'scheduled')
-            ->where('interview_date', '>=', now()->toDateString())
+            ->with(['application.user', 'application.job'])
             ->orderBy('interview_date', 'asc')
             ->orderBy('start_time', 'asc')
             ->limit(5)
             ->get();
 
-        // Recent evaluations needing attention or completed
-        $recentEvaluations = Interview::with(['application.user', 'application.job'])
+        // Recent evaluations submitted
+        $recentEvaluations = (clone $baseInterviewQuery)
             ->where('status', 'completed')
-            ->latest('updated_at')
+            ->with(['application.user', 'application.job'])
+            ->latest('feedback_submitted_at')
             ->limit(5)
             ->get();
 
-        return view('tr.dashboard', compact('metrics', 'upcomingInterviews', 'recentEvaluations'));
+        return view('tr.dashboard', compact(
+            'metrics',
+            'todayInterviews',
+            'upcomingInterviews',
+            'recentEvaluations'
+        ));
     }
 }
