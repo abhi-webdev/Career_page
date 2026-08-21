@@ -1,36 +1,25 @@
 <?php
 
-namespace App\Http\Controllers\Admin;
+namespace App\Http\Controllers\HR;
 
 use App\Http\Controllers\Controller;
 use App\Models\Employee;
-use App\Models\RoleChangeLog;
-use App\Notifications\RoleUpdatedNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 
-class EmployeeController extends Controller
+class HREmployeeController extends Controller
 {
     /**
-     * Display a listing of all hired employees.
+     * Display HR Employee Directory.
      */
     public function index(Request $request)
     {
         $query = Employee::with(['user', 'application.job', 'offer']);
 
-        // Filter by Status
         if ($request->filled('status') && in_array($request->status, ['pending', 'active', 'inactive'])) {
             $query->where('status', $request->status);
         }
 
-        // Filter by Role
-        if ($request->filled('role') && in_array($request->role, ['employee', 'admin', 'hr', 'tr'])) {
-            $query->whereHas('user', function ($uq) use ($request) {
-                $uq->where('role', $request->role);
-            });
-        }
-
-        // Search by candidate name, email, employee code, or job position
         if ($request->filled('search')) {
             $search = $request->search;
             $query->where(function ($q) use ($search) {
@@ -55,11 +44,11 @@ class EmployeeController extends Controller
             'inactive' => Employee::where('status', 'inactive')->count(),
         ];
 
-        return view('admin.employees.index', compact('employees', 'metrics'));
+        return view('hr.employees.index', compact('employees', 'metrics'));
     }
 
     /**
-     * Display the specified employee profile and recruitment history.
+     * Display HR Employee Profile (Read-only for roles, but can update onboarding status).
      */
     public function show(Employee $employee)
     {
@@ -69,58 +58,13 @@ class EmployeeController extends Controller
             'application.resume',
             'application.interview',
             'offer.versions',
-            'roleChangeLogs.changedBy',
         ]);
 
-        return view('admin.employees.show', compact('employee'));
+        return view('hr.employees.show', compact('employee'));
     }
 
     /**
-     * Update employee role (employee, admin, hr, tr) and maintain audit log.
-     */
-    public function updateRole(Request $request, Employee $employee)
-    {
-        $validated = $request->validate([
-            'role' => 'required|in:employee,admin,hr,tr',
-        ]);
-
-        $user = $employee->user;
-        if (!$user) {
-            return back()->with('error', 'Linked user account not found for this employee.');
-        }
-
-        $oldRole = $user->role;
-        $newRole = $validated['role'];
-
-        if ($oldRole === $newRole) {
-            return back()->with('info', "Employee already holds the {$newRole} role.");
-        }
-
-        // Record security audit trail
-        RoleChangeLog::create([
-            'employee_id' => $employee->id,
-            'changed_by' => auth()->id(),
-            'old_role' => $oldRole,
-            'new_role' => $newRole,
-        ]);
-
-        // Update User role (Single source of truth)
-        $user->update([
-            'role' => $newRole,
-        ]);
-
-        // Send In-App Notification
-        try {
-            $user->notify(new RoleUpdatedNotification($oldRole, $newRole, auth()->user()->name));
-        } catch (\Throwable $e) {
-            // Ignore notification failure in offline environments
-        }
-
-        return back()->with('success', "Employee role successfully updated to " . strtoupper($newRole) . ".");
-    }
-
-    /**
-     * Update employee employment status (pending, active, inactive).
+     * HR Update employee onboarding status.
      */
     public function updateStatus(Request $request, Employee $employee)
     {
@@ -140,7 +84,7 @@ class EmployeeController extends Controller
     }
 
     /**
-     * Securely view/download the signed offer letter of the employee.
+     * HR Download Signed Offer Document.
      */
     public function downloadSignedOffer(Employee $employee)
     {

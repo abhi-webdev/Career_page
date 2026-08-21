@@ -11,8 +11,21 @@ class DashboardController extends Controller
 {
     public function index()
     {
-        if (auth()->user() && auth()->user()->role === 'admin') {
-            return redirect()->route('admin.dashboard');
+        $user = auth()->user();
+
+        if ($user) {
+            if ($user->role === 'admin') {
+                return redirect()->route('admin.dashboard');
+            }
+            if ($user->role === 'hr') {
+                return redirect()->route('hr.dashboard');
+            }
+            if ($user->role === 'tr') {
+                return redirect()->route('tr.dashboard');
+            }
+            if ($user->role === 'employee') {
+                return redirect()->route('employee.dashboard');
+            }
         }
 
         $userId = auth()->id();

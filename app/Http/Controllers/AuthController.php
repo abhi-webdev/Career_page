@@ -18,7 +18,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Register a new user.
+     * Register a new user (always default role: user/candidate).
      */
     public function register(Request $request)
     {
@@ -32,7 +32,7 @@ class AuthController extends Controller
             'name' => $validated['name'],
             'email' => strtolower($validated['email']),
             'password' => Hash::make($validated['password']),
-            'role' => 'user',
+            'role' => 'user', // strictly enforced candidate role
         ]);
 
         Auth::login($user);
@@ -53,7 +53,7 @@ class AuthController extends Controller
     }
 
     /**
-     * Login user.
+     * Login user and redirect to appropriate role portal.
      */
     public function login(Request $request)
     {
@@ -74,11 +74,25 @@ class AuthController extends Controller
 
         $request->session()->regenerate();
 
-        $defaultRoute = Auth::user()->role === 'admin' ? 'admin.dashboard' : 'dashboard';
+        $defaultRoute = self::getDashboardRouteForUser(Auth::user());
 
         return redirect()
-            ->intended(route($defaultRoute))
+            ->route($defaultRoute)
             ->with('success', 'Login successful');
+    }
+
+    /**
+     * Get the designated dashboard route name for a user based on their RBAC role.
+     */
+    public static function getDashboardRouteForUser(User $user): string
+    {
+        return match ($user->role) {
+            'admin' => 'admin.dashboard',
+            'hr' => 'hr.dashboard',
+            'tr' => 'tr.dashboard',
+            'employee' => 'employee.dashboard',
+            default => 'dashboard',
+        };
     }
 
     /**

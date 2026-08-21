@@ -15,6 +15,7 @@ class Job extends Model
         'location',
         'job_type',
         'experience',
+        'technical_interview_required',
         'apply_url',
         'application_start',
         'application_deadline',
@@ -28,6 +29,7 @@ class Job extends Model
     {
         return [
             'skills' => 'array',
+            'technical_interview_required' => 'boolean',
             'application_start' => 'datetime',
             'application_deadline' => 'datetime',
             'screening_date' => 'datetime',

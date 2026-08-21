@@ -464,7 +464,12 @@ class ApplicationController extends Controller
             ]
         );
 
-        // 3. Send email to candidate
+        // 3. Set User role to employee (Default employee role)
+        if ($application->user->role === 'user') {
+            $application->user->update(['role' => 'employee']);
+        }
+
+        // 4. Send email to candidate
         try {
             Mail::to($application->user->email)->send(new OfferAccepted($application->offer, $employee));
         } catch (\Throwable $e) {

@@ -5,6 +5,16 @@
 
 @section('content')
 
+@php
+    $currentRole = $employee->user->role ?? 'employee';
+    $roleBadge = match($currentRole) {
+        'admin' => 'bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20',
+        'hr' => 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20',
+        'tr' => 'bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/20',
+        default => 'bg-brand-500/10 text-brand-600 dark:text-brand-400 border-brand-500/20',
+    };
+@endphp
+
 <div class="max-w-6xl mx-auto space-y-6">
 
     {{-- Breadcrumb Back --}}
@@ -22,6 +32,9 @@
             <div class="flex items-center gap-2">
                 <span class="font-mono text-xs font-extrabold text-brand-500 bg-brand-500/10 px-2.5 py-0.5 rounded-lg border border-brand-500/20">
                     {{ $employee->employee_code }}
+                </span>
+                <span class="inline-flex rounded-full border px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $roleBadge }}">
+                    Role: {{ $currentRole }}
                 </span>
                 <span class="text-xs font-bold uppercase tracking-wider text-[#6B6B6B] dark:text-[#A1A1A1]">
                     {{ $employee->application->job->company }}
@@ -85,12 +98,14 @@
                         <p class="font-bold text-[#111111] dark:text-white mt-0.5">{{ $employee->user->email }}</p>
                     </div>
                     <div>
-                        <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Position & Department</span>
-                        <p class="font-bold text-[#111111] dark:text-white mt-0.5">{{ $employee->application->job->title }}</p>
+                        <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Assigned System Role</span>
+                        <p class="font-bold text-[#111111] dark:text-white mt-0.5 uppercase tracking-wide">
+                            {{ $employee->user->role }}
+                        </p>
                     </div>
                     <div>
-                        <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Company</span>
-                        <p class="font-bold text-[#111111] dark:text-white mt-0.5">{{ $employee->application->job->company }}</p>
+                        <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Position & Department</span>
+                        <p class="font-bold text-[#111111] dark:text-white mt-0.5">{{ $employee->application->job->title }}</p>
                     </div>
                     <div>
                         <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Official Joining Date</span>
@@ -188,12 +203,94 @@
                 </div>
             </div>
 
+            {{-- 4. Role Change Audit Trail --}}
+            @if($employee->roleChangeLogs->count() > 0)
+                <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
+                        Role Change Security Audit Trail
+                    </h2>
+                    <div class="mt-4 overflow-x-auto">
+                        <table class="w-full text-left text-xs">
+                            <thead>
+                                <tr class="border-b border-[#E5E5E5] text-[#6B6B6B] dark:border-[#262626] dark:text-[#A1A1A1]">
+                                    <th class="pb-2 font-bold">Transition</th>
+                                    <th class="pb-2 font-bold">Changed By</th>
+                                    <th class="pb-2 font-bold text-right">Timestamp</th>
+                                </tr>
+                            </thead>
+                            <tbody class="divide-y divide-[#E5E5E5] dark:divide-[#262626]">
+                                @foreach($employee->roleChangeLogs as $log)
+                                    <tr>
+                                        <td class="py-2.5 font-bold text-[#111111] dark:text-white">
+                                            <span class="uppercase font-mono text-[11px] text-slate-500">{{ $log->old_role }}</span>
+                                            <span class="text-brand-500 font-bold mx-1.5">→</span>
+                                            <span class="uppercase font-mono text-[11px] text-brand-500 font-extrabold">{{ $log->new_role }}</span>
+                                        </td>
+                                        <td class="py-2.5 text-[#111111] dark:text-white">
+                                            {{ $log->changedBy->name ?? 'Administrator' }}
+                                        </td>
+                                        <td class="py-2.5 text-right text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                            {{ $log->created_at->format('d M Y, h:i A') }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            @endif
+
         </div>
 
-        {{-- Right Column: Status Controls & Offer History --}}
+        {{-- Right Column: Role Assignment & Status Controls --}}
         <div class="lg:col-span-5 space-y-6">
 
-            {{-- 1. Status Management Card --}}
+            {{-- 1. Role-Based Access Control (Assign Role) --}}
+            <div class="rounded-2xl border border-brand-500/30 bg-white p-6 dark:border-brand-500/30 dark:bg-[#141414] shadow-xs">
+                <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                            Assign System Role
+                        </h2>
+                        <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1] mt-0.5">
+                            Authorize administrative access portal permissions.
+                        </p>
+                    </div>
+                    <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $roleBadge }}">
+                        {{ $currentRole }}
+                    </span>
+                </div>
+
+                <form id="role-assignment-form" action="{{ route('admin.employees.role.update', $employee) }}" method="POST" class="mt-4">
+                    @csrf
+
+                    <div>
+                        <label class="block text-xs font-bold text-[#111111] dark:text-white mb-1.5">
+                            Select Organizational Role:
+                        </label>
+                        <select
+                            name="role"
+                            id="target-role-select"
+                            class="w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs font-bold text-[#111111] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                        >
+                            <option value="employee" {{ $currentRole === 'employee' ? 'selected' : '' }}>Employee (Standard Staff Portal)</option>
+                            <option value="admin" {{ $currentRole === 'admin' ? 'selected' : '' }}>Admin (Full System & ATS Access)</option>
+                            <option value="hr" {{ $currentRole === 'hr' ? 'selected' : '' }}>HR (Human Resources Portal)</option>
+                            <option value="tr" {{ $currentRole === 'tr' ? 'selected' : '' }}>TR (Technical Recruiter Portal)</option>
+                        </select>
+                    </div>
+
+                    <button
+                        type="button"
+                        onclick="showRoleConfirmModal()"
+                        class="mt-4 w-full rounded-xl bg-brand-500 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600 focus:ring-2 focus:ring-brand-500/50"
+                    >
+                        Update Role →
+                    </button>
+                </form>
+            </div>
+
+            {{-- 2. Status Management Card --}}
             <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
                 <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
                     Update Employee Status
@@ -217,14 +314,14 @@
 
                     <button
                         type="submit"
-                        class="mt-3 w-full rounded-xl bg-brand-500 py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600"
+                        class="mt-3 w-full rounded-xl bg-[#111111] py-2.5 text-xs font-bold text-white shadow-xs transition hover:bg-brand-500 dark:bg-white dark:text-[#111111] dark:hover:bg-brand-500 dark:hover:text-white"
                     >
                         Save Employment Status
                     </button>
                 </form>
             </div>
 
-            {{-- 2. Final Accepted Offer Summary --}}
+            {{-- 3. Final Accepted Offer Summary --}}
             @if($employee->offer)
                 <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
                     <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
@@ -264,48 +361,70 @@
                 </div>
             @endif
 
-            {{-- 3. Interview Evaluation Audit --}}
-            @if($employee->application->interview)
-                <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
-                        Interview Assessment History
-                    </h2>
-                    <div class="mt-4 space-y-2 text-xs">
-                        <div class="flex justify-between">
-                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Interview Date:</span>
-                            <span class="font-bold text-[#111111] dark:text-white">{{ $employee->application->interview->interview_date->format('d M Y') }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Status:</span>
-                            <span class="font-bold text-emerald-600 dark:text-emerald-400 uppercase">{{ $employee->application->interview->status }}</span>
-                        </div>
-                        @if($employee->application->interview->admin_feedback)
-                            <div class="pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
-                                <span class="text-[11px] font-bold text-[#111111] dark:text-white">Admin Feedback Note:</span>
-                                <p class="mt-1 text-xs whitespace-pre-line text-[#6B6B6B] dark:text-[#A1A1A1]">
-                                    {{ $employee->application->interview->admin_feedback }}
-                                </p>
-                            </div>
-                        @endif
-                        @if($employee->application->interview->feedback_attachment_path)
-                            <div class="pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
-                                <a
-                                    href="{{ asset('storage/' . $employee->application->interview->feedback_attachment_path) }}"
-                                    target="_blank"
-                                    class="text-brand-500 font-bold hover:underline"
-                                >
-                                    Download Evaluation Scorecard ↗
-                                </a>
-                            </div>
-                        @endif
-                    </div>
-                </div>
-            @endif
-
         </div>
 
     </div>
 
 </div>
+
+{{-- Role Change Confirmation Modal --}}
+<div id="role-confirm-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
+    <div class="w-full max-w-md rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-2xl">
+        <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
+            <h2 class="text-base font-bold text-[#111111] dark:text-white">
+                Change Employee Role?
+            </h2>
+            <button type="button" onclick="hideRoleConfirmModal()" class="text-slate-400 hover:text-slate-600">✕</button>
+        </div>
+
+        <div class="mt-4 space-y-3 text-xs text-[#111111] dark:text-white">
+            <p class="text-[#6B6B6B] dark:text-[#A1A1A1]">
+                You are about to modify system authorization permissions for:
+            </p>
+            <div class="rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] p-3.5 dark:border-[#262626] dark:bg-[#1A1A1A] space-y-1.5">
+                <p><strong>Employee:</strong> {{ $employee->user->name }} ({{ $employee->employee_code }})</p>
+                <p><strong>Current Role:</strong> <span class="font-mono uppercase font-bold text-slate-600 dark:text-slate-400">{{ $currentRole }}</span></p>
+                <p><strong>New Role:</strong> <span id="modal-target-role" class="font-mono uppercase font-bold text-brand-500"></span></p>
+            </div>
+            <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">
+                The user will immediately gain permissions associated with the new role and will be notified in-app.
+            </p>
+        </div>
+
+        <div class="grid grid-cols-2 gap-2.5 pt-4 mt-4 border-t border-[#E5E5E5] dark:border-[#262626]">
+            <button
+                type="button"
+                onclick="hideRoleConfirmModal()"
+                class="rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] py-2.5 text-xs font-bold text-[#111111] hover:bg-slate-100 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+            >
+                Cancel
+            </button>
+            <button
+                type="button"
+                onclick="submitRoleChange()"
+                class="rounded-xl bg-brand-500 py-2.5 text-xs font-bold text-white hover:bg-brand-600 transition shadow-xs"
+            >
+                Confirm Role Change ✓
+            </button>
+        </div>
+    </div>
+</div>
+
+<script>
+    function showRoleConfirmModal() {
+        const select = document.getElementById('target-role-select');
+        const targetRole = select.value;
+        document.getElementById('modal-target-role').textContent = targetRole.toUpperCase();
+        document.getElementById('role-confirm-modal').classList.remove('hidden');
+    }
+
+    function hideRoleConfirmModal() {
+        document.getElementById('role-confirm-modal').classList.add('hidden');
+    }
+
+    function submitRoleChange() {
+        document.getElementById('role-assignment-form').submit();
+    }
+</script>
 
 @endsection

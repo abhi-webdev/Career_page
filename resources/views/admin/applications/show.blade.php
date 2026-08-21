@@ -316,7 +316,7 @@
             {{-- 1. Stage Control Card (Hidden mutating actions when hired) --}}
             <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
                 <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
-                    Application Stage
+                    Application Stage Decision
                 </h2>
                 @if($isHired)
                     <div class="mt-3 rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 text-xs text-emerald-700 dark:text-emerald-300 font-semibold">
@@ -324,7 +324,7 @@
                     </div>
                 @else
                     <p class="mt-0.5 text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                        Transition this candidate through the hiring pipeline.
+                        Transition candidate through the recruitment pipeline.
                     </p>
 
                     <form action="{{ route('admin.applications.status', $application) }}" method="POST" class="mt-4">
@@ -337,7 +337,11 @@
                         >
                             <option value="pending" {{ $application->status === 'pending' ? 'selected' : '' }}>Pending Screening</option>
                             <option value="shortlisted" {{ $application->status === 'shortlisted' ? 'selected' : '' }}>Shortlisted for Evaluation</option>
-                            <option value="interview" {{ $application->status === 'interview' ? 'selected' : '' }}>Interview Stage</option>
+                            <option value="interview" {{ $application->status === 'interview' || $application->status === 'hr_interview' ? 'selected' : '' }}>HR Interview Stage</option>
+                            @if($application->requiresTechnicalInterview())
+                                <option value="technical_interview" {{ $application->status === 'technical_interview' ? 'selected' : '' }}>Technical Interview Stage</option>
+                            @endif
+                            <option value="admin_review" {{ $application->status === 'admin_review' ? 'selected' : '' }}>Admin Final Review</option>
                             <option value="selected" {{ $application->status === 'selected' ? 'selected' : '' }}>Selected for Offer</option>
                             <option value="rejected" {{ $application->status === 'rejected' ? 'selected' : '' }}>Rejected / Closed</option>
                         </select>
@@ -352,62 +356,65 @@
                 @endif
             </div>
 
-            {{-- 2. Interview Scheduling & Admin Feedback Control --}}
-            <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">
+            {{-- 2. Mandatory HR Interview Assessment Card --}}
+            <div class="rounded-2xl border border-purple-500/30 bg-white p-6 dark:border-purple-500/30 dark:bg-[#141414] shadow-xs">
                 <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
-                    <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
-                        Interview Assessment
-                    </h2>
-                    @if($application->interview)
-                        <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $application->interview->status === 'completed' ? 'bg-emerald-500/10 text-emerald-500' : ($application->interview->status === 'cancelled' ? 'bg-red-500/10 text-red-500' : 'bg-brand-500/10 text-brand-500') }}">
-                            {{ $application->interview->status }}
+                    <div>
+                        <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                            Mandatory HR Interview
+                        </h2>
+                        <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Culture & screening evaluation</p>
+                    </div>
+                    @if($application->hrInterview)
+                        <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $application->hrInterview->status === 'completed' ? ($application->hrInterview->result === 'passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600') : 'bg-purple-500/10 text-purple-600' }}">
+                            {{ $application->hrInterview->status === 'completed' ? ($application->hrInterview->result ?? 'Completed') : $application->hrInterview->status }}
                         </span>
                     @endif
                 </div>
 
-                @if($application->interview)
+                @php $hrInterview = $application->hrInterview ?? ($application->interview && $application->interview->type === 'hr' ? $application->interview : null); @endphp
+
+                @if($hrInterview)
                     <div class="mt-4 space-y-3 text-xs">
                         <div class="flex justify-between">
-                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Candidate</span>
-                            <span class="font-bold text-[#111111] dark:text-white">{{ $application->user->name }}</span>
-                        </div>
-                        <div class="flex justify-between">
-                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Interview Date & Time</span>
+                            <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Schedule:</span>
                             <span class="font-bold text-[#111111] dark:text-white">
-                                {{ $application->interview->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($application->interview->start_time)->format('h:i A') }}
+                                {{ $hrInterview->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($hrInterview->start_time)->format('h:i A') }}
                             </span>
                         </div>
 
-                        @if($application->interview->meeting_link)
+                        @if($hrInterview->meeting_link)
                             <a
-                                href="{{ $application->interview->meeting_link }}"
+                                href="{{ $hrInterview->meeting_link }}"
                                 target="_blank"
-                                class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-brand-500/30 bg-brand-500/10 py-2 text-xs font-bold text-brand-500 hover:bg-brand-500 hover:text-white transition"
+                                class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-purple-500/30 bg-purple-500/10 py-2 text-xs font-bold text-purple-600 hover:bg-purple-600 hover:text-white transition"
                             >
                                 <span>📹 Open Google Meet</span>
                                 <span>↗</span>
                             </a>
                         @endif
 
-                        {{-- Completed Status & Admin Feedback Display --}}
-                        @if($application->interview->status === 'completed')
-                            <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5 mt-3 space-y-2">
-                                <p class="text-[10px] font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
-                                    ✓ Interview Completed & Evaluated
-                                </p>
-
-                                @if($application->interview->admin_feedback)
+                        @if($hrInterview->status === 'completed')
+                            <div class="rounded-xl border border-purple-500/30 bg-purple-500/10 p-3.5 space-y-2">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-[10px] font-bold uppercase tracking-wider text-purple-700 dark:text-purple-300">
+                                        HR Outcome:
+                                    </span>
+                                    <span class="font-bold uppercase text-xs {{ $hrInterview->result === 'passed' ? 'text-emerald-600' : 'text-red-600' }}">
+                                        {{ $hrInterview->result ?? 'Completed' }}
+                                    </span>
+                                </div>
+                                @if($hrInterview->admin_feedback)
                                     <div>
                                         <span class="text-[11px] font-bold text-[#111111] dark:text-white">Admin Feedback Note:</span>
-                                        <p class="mt-0.5 text-xs text-[#111111] dark:text-white whitespace-pre-line">
-                                            {{ $application->interview->admin_feedback }}
+                                        <p class="text-xs text-[#111111] dark:text-white whitespace-pre-line mt-0.5">
+                                            {{ $hrInterview->admin_feedback }}
                                         </p>
                                     </div>
                                 @endif
-
-                                @if($application->interview->feedback_attachment_path)
-                                    <div class="pt-1.5 border-t border-emerald-500/20 flex items-center justify-between">
-                                        <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">Evaluation Attachment:</span>
+                                @if($hrInterview->feedback_attachment_path)
+                                    <div class="pt-1.5 border-t border-purple-500/20 flex items-center justify-between">
+                                        <span class="text-[11px] font-bold text-purple-800 dark:text-purple-300">Evaluation Attachment:</span>
                                         <a
                                             href="{{ route('admin.applications.interview.download-attachment', $application) }}"
                                             class="inline-flex items-center gap-1 text-xs font-bold text-brand-500 hover:underline"
@@ -416,109 +423,190 @@
                                         </a>
                                     </div>
                                 @endif
-
-                                <p class="text-[10px] text-emerald-600 dark:text-emerald-400">
-                                    Recorded on {{ $application->interview->feedback_submitted_at ? $application->interview->feedback_submitted_at->format('d M Y, h:i A') : $application->interview->updated_at->format('d M Y, h:i A') }}
-                                </p>
                             </div>
-                        @endif
-
-                        {{-- Action Controls when Scheduled --}}
-                        @if($application->interview->status === 'scheduled')
-                            <div class="grid grid-cols-2 gap-2 pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
-                                <a
-                                    href="{{ route('admin.applications.interview.create', $application) }}"
-                                    class="rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] py-2 text-center text-xs font-bold text-[#111111] hover:border-brand-500 dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white transition"
-                                >
-                                    Reschedule
-                                </a>
-
-                                <button
-                                    type="button"
-                                    onclick="toggleCompleteInterviewForm()"
-                                    class="rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white transition hover:bg-emerald-700"
-                                >
-                                    Complete Round ✓
-                                </button>
-                            </div>
-
-                            {{-- Admin Feedback & Attachment Form for Completion --}}
-                            <div id="admin-complete-interview-container" class="hidden rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] p-4 dark:border-[#262626] dark:bg-[#1A1A1A] mt-3">
-                                <h3 class="text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white mb-2">
-                                    Complete Interview & Provide Evaluation
-                                </h3>
-
+                        @elseif($hrInterview->status === 'scheduled')
+                            <div class="pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
                                 <form action="{{ route('admin.applications.interview.complete', $application) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
                                     @csrf
                                     @method('PATCH')
+                                    <input type="hidden" name="type" value="hr">
 
                                     <div>
                                         <label class="block text-[11px] font-bold text-[#111111] dark:text-white mb-1">
-                                            Admin Feedback Note:
+                                            HR Evaluation Result:
+                                        </label>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <label class="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs font-bold text-emerald-700 cursor-pointer">
+                                                <input type="radio" name="result" value="passed" checked class="accent-emerald-600">
+                                                <span>✓ Pass Round</span>
+                                            </label>
+                                            <label class="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs font-bold text-red-700 cursor-pointer">
+                                                <input type="radio" name="result" value="failed" class="accent-red-600">
+                                                <span>✕ Fail Round</span>
+                                            </label>
+                                        </div>
+                                    </div>
+
+                                    <div>
+                                        <label class="block text-[11px] font-bold text-[#111111] dark:text-white mb-1">
+                                            HR Evaluation Notes:
                                         </label>
                                         <textarea
                                             name="admin_feedback"
-                                            rows="3"
-                                            placeholder="Enter technical interview evaluation notes, candidate strengths, and recommendations..."
-                                            class="w-full rounded-xl border border-[#E5E5E5] bg-white p-2.5 text-xs text-[#111111] outline-none focus:border-brand-500 dark:border-[#262626] dark:bg-[#141414] dark:text-white"
+                                            rows="2"
+                                            placeholder="HR evaluation notes..."
+                                            class="w-full rounded-xl border border-[#E5E5E5] bg-white p-2 text-xs text-[#111111] outline-none dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
                                         ></textarea>
                                     </div>
 
-                                    <div>
-                                        <label class="block text-[11px] font-bold text-[#111111] dark:text-white mb-1">
-                                            Feedback Attachment (Optional - PDF, DOC, PNG, JPG):
-                                        </label>
-                                        <input
-                                            type="file"
-                                            name="feedback_attachment"
-                                            accept=".pdf,.doc,.docx,.png,.jpg,.jpeg"
-                                            class="block w-full text-xs text-[#6B6B6B] file:mr-3 file:rounded-xl file:border-0 file:bg-brand-500 file:px-3 file:py-1.5 file:text-xs file:font-bold file:text-white hover:file:bg-brand-600 cursor-pointer"
-                                        >
-                                    </div>
-
-                                    <div class="flex items-center gap-2 pt-1">
-                                        <button
-                                            type="submit"
-                                            class="flex-1 rounded-xl bg-emerald-600 py-2 text-xs font-bold text-white hover:bg-emerald-700 transition"
-                                        >
-                                            Save & Mark Completed ✓
-                                        </button>
-                                        <button
-                                            type="button"
-                                            onclick="toggleCompleteInterviewForm()"
-                                            class="rounded-xl border border-[#E5E5E5] bg-white px-3 py-2 text-xs font-bold text-[#6B6B6B] dark:border-[#262626] dark:bg-[#141414] dark:text-[#A1A1A1]"
-                                        >
-                                            Cancel
-                                        </button>
-                                    </div>
+                                    <button
+                                        type="submit"
+                                        class="w-full rounded-xl bg-purple-600 py-2 text-xs font-bold text-white hover:bg-purple-700 transition"
+                                    >
+                                        Complete HR Round ✓
+                                    </button>
                                 </form>
                             </div>
-
-                            <form action="{{ route('admin.applications.interview.cancel', $application) }}" method="POST" onsubmit="return confirm('Cancel this scheduled interview?');" class="mt-2">
-                                @csrf
-                                @method('PATCH')
-                                <button type="submit" class="w-full rounded-xl border border-red-500/30 bg-red-500/10 py-1.5 text-xs font-bold text-red-600 hover:bg-red-500/20 dark:text-red-400 transition">
-                                    Cancel Interview
-                                </button>
-                            </form>
                         @endif
                     </div>
                 @else
                     <div class="mt-4 text-center">
                         <p class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                            No interview has been scheduled yet.
+                            No HR interview scheduled yet.
                         </p>
                         @if(!$isHired)
                             <a
                                 href="{{ route('admin.applications.interview.create', $application) }}"
-                                class="mt-3 inline-flex items-center gap-1 rounded-xl bg-[#111111] px-4 py-2 text-xs font-bold text-white transition hover:bg-brand-500 dark:bg-white dark:text-[#111111] dark:hover:bg-brand-500 dark:hover:text-white"
+                                class="mt-3 inline-flex items-center gap-1 rounded-xl bg-purple-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-purple-700 shadow-xs"
                             >
-                                + Schedule Interview
+                                + Schedule HR Interview
                             </a>
                         @endif
                     </div>
                 @endif
             </div>
+
+            {{-- 3. Technical Interview Assessment Card (If Job Requires Technical Round) --}}
+            @if($application->requiresTechnicalInterview() || $application->technicalInterview)
+                <div class="rounded-2xl border border-blue-500/30 bg-white p-6 dark:border-blue-500/30 dark:bg-[#141414] shadow-xs">
+                    <div class="flex items-center justify-between border-b border-[#E5E5E5] pb-3 dark:border-[#262626]">
+                        <div>
+                            <h2 class="text-sm font-bold uppercase tracking-wider text-[#111111] dark:text-white">
+                                Technical Interview
+                            </h2>
+                            <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1]">Engineering evaluation (TR)</p>
+                        </div>
+                        @if($application->technicalInterview)
+                            <span class="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider {{ $application->technicalInterview->status === 'completed' ? ($application->technicalInterview->result === 'passed' ? 'bg-emerald-500/10 text-emerald-600' : 'bg-red-500/10 text-red-600') : 'bg-blue-500/10 text-blue-600' }}">
+                                {{ $application->technicalInterview->status === 'completed' ? ($application->technicalInterview->result ?? 'Completed') : $application->technicalInterview->status }}
+                            </span>
+                        @endif
+                    </div>
+
+                    @php $techInterview = $application->technicalInterview; @endphp
+
+                    @if($techInterview)
+                        <div class="mt-4 space-y-3 text-xs">
+                            <div class="flex justify-between">
+                                <span class="text-[#6B6B6B] dark:text-[#A1A1A1]">Schedule:</span>
+                                <span class="font-bold text-[#111111] dark:text-white">
+                                    {{ $techInterview->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($techInterview->start_time)->format('h:i A') }}
+                                </span>
+                            </div>
+
+                            @if($techInterview->meeting_link)
+                                <a
+                                    href="{{ $techInterview->meeting_link }}"
+                                    target="_blank"
+                                    class="inline-flex w-full items-center justify-center gap-1.5 rounded-xl border border-blue-500/30 bg-blue-500/10 py-2 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white transition"
+                                >
+                                    <span>📹 Open Technical Meet</span>
+                                    <span>↗</span>
+                                </a>
+                            @endif
+
+                            @if($techInterview->status === 'completed')
+                                <div class="rounded-xl border border-blue-500/30 bg-blue-500/10 p-3.5 space-y-1.5">
+                                    <div class="flex justify-between items-center">
+                                        <span class="text-[10px] font-bold uppercase tracking-wider text-blue-700 dark:text-blue-300">
+                                            Technical Result:
+                                        </span>
+                                        <span class="font-bold uppercase text-xs {{ $techInterview->result === 'passed' ? 'text-emerald-600' : 'text-red-600' }}">
+                                            {{ $techInterview->result ?? 'Completed' }}
+                                        </span>
+                                    </div>
+                                    @if($techInterview->admin_feedback)
+                                        <p class="text-xs text-[#111111] dark:text-white whitespace-pre-line mt-1">
+                                            {{ $techInterview->admin_feedback }}
+                                        </p>
+                                    @endif
+                                </div>
+                            @elseif($techInterview->status === 'scheduled')
+                                <div class="pt-2 border-t border-[#E5E5E5] dark:border-[#262626]">
+                                    <form action="{{ route('admin.applications.interview.complete', $application) }}" method="POST" enctype="multipart/form-data" class="space-y-3">
+                                        @csrf
+                                        @method('PATCH')
+                                        <input type="hidden" name="type" value="technical">
+
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-[#111111] dark:text-white mb-1">
+                                                Technical Evaluation Result:
+                                            </label>
+                                            <div class="grid grid-cols-2 gap-2">
+                                                <label class="flex items-center gap-1.5 rounded-lg border border-emerald-500/30 bg-emerald-500/10 p-2 text-xs font-bold text-emerald-700 cursor-pointer">
+                                                    <input type="radio" name="result" value="passed" checked class="accent-emerald-600">
+                                                    <span>✓ Pass Tech</span>
+                                                </label>
+                                                <label class="flex items-center gap-1.5 rounded-lg border border-red-500/30 bg-red-500/10 p-2 text-xs font-bold text-red-700 cursor-pointer">
+                                                    <input type="radio" name="result" value="failed" class="accent-red-600">
+                                                    <span>✕ Fail Tech</span>
+                                                </label>
+                                            </div>
+                                        </div>
+
+                                        <div>
+                                            <label class="block text-[11px] font-bold text-[#111111] dark:text-white mb-1">
+                                                Technical Notes:
+                                            </label>
+                                            <textarea
+                                                name="admin_feedback"
+                                                rows="2"
+                                                placeholder="Technical evaluation notes..."
+                                                class="w-full rounded-xl border border-[#E5E5E5] bg-white p-2 text-xs text-[#111111] outline-none dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
+                                            ></textarea>
+                                        </div>
+
+                                        <button
+                                            type="submit"
+                                            class="w-full rounded-xl bg-blue-600 py-2 text-xs font-bold text-white hover:bg-blue-700 transition"
+                                        >
+                                            Complete Technical Round ✓
+                                        </button>
+                                    </form>
+                                </div>
+                            @endif
+                        </div>
+                    @else
+                        <div class="mt-4 text-center">
+                            <p class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                @if($application->hasHRInterviewPassed())
+                                    Candidate cleared HR! Ready for technical interview.
+                                @else
+                                    Awaiting completion of mandatory HR interview.
+                                @endif
+                            </p>
+                            @if(!$isHired && $application->hasHRInterviewPassed())
+                                <a
+                                    href="{{ route('admin.applications.interview.create', $application) }}"
+                                    class="mt-3 inline-flex items-center gap-1 rounded-xl bg-blue-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-blue-700 shadow-xs"
+                                >
+                                    + Schedule Technical Interview
+                                </a>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+            @endif
 
             {{-- 3. Offer Management & Contextual Visibility --}}
             <div class="rounded-2xl border border-[#E5E5E5] bg-white p-6 dark:border-[#262626] dark:bg-[#141414] shadow-xs">

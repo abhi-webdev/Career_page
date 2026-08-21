@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\EmployeeDashboardController;
 use App\Http\Controllers\AdminController;
 use App\Http\Controllers\JobController;
 use App\Http\Controllers\ApplicationController;
@@ -10,6 +11,12 @@ use App\Http\Controllers\Admin\ApplicationController as AdminApplicationControll
 use App\Http\Controllers\Admin\InterviewController;
 use App\Http\Controllers\Admin\OfferController;
 use App\Http\Controllers\Admin\EmployeeController;
+use App\Http\Controllers\HR\HRDashboardController;
+use App\Http\Controllers\HR\HREmployeeController;
+use App\Http\Controllers\HR\HRApplicationController;
+use App\Http\Controllers\TR\TRDashboardController;
+use App\Http\Controllers\TR\TRApplicationController;
+use App\Http\Controllers\TR\TRInterviewController;
 use App\Http\Controllers\ProfileController;
 use App\Http\Controllers\NotificationController;
 
@@ -75,7 +82,6 @@ Route::middleware('auth')->group(function () {
     Route::get('/my-applications', [ApplicationController::class, 'index'])
         ->name('applications.index');
 
-
     // Singular Candidate Offer Routes
     Route::get('/offer', [ApplicationController::class, 'showOffer'])
         ->name('offers.current');
@@ -125,7 +131,111 @@ Route::middleware('auth')->group(function () {
 
 /*
 |--------------------------------------------------------------------------
-| Admin Routes
+| Employee Portal Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:employee,admin,hr,tr'])
+    ->prefix('employee')
+    ->name('employee.')
+    ->group(function () {
+        Route::get('/dashboard', [EmployeeDashboardController::class, 'index'])
+            ->name('dashboard');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| HR Portal Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:hr,admin'])
+    ->prefix('hr')
+    ->name('hr.')
+    ->group(function () {
+        Route::get('/dashboard', [HRDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        // Employees
+        Route::get('/employees', [HREmployeeController::class, 'index'])
+            ->name('employees.index');
+
+        Route::get('/employees/{employee}', [HREmployeeController::class, 'show'])
+            ->name('employees.show');
+
+        Route::patch('/employees/{employee}/status', [HREmployeeController::class, 'updateStatus'])
+            ->name('employees.status');
+
+        Route::get('/employees/{employee}/signed-offer', [HREmployeeController::class, 'downloadSignedOffer'])
+            ->name('employees.signed-offer');
+
+        // Candidate Applications & Recruitment review
+        Route::get('/applications', [HRApplicationController::class, 'index'])
+            ->name('applications.index');
+
+        Route::get('/applications/{application}', [HRApplicationController::class, 'show'])
+            ->name('applications.show');
+
+        // HR Interviews
+        Route::get('/interviews', [\App\Http\Controllers\HR\HRInterviewController::class, 'index'])
+            ->name('interviews.index');
+
+        Route::get('/applications/{application}/interview/create', [\App\Http\Controllers\HR\HRInterviewController::class, 'create'])
+            ->name('applications.interview.create');
+
+        Route::post('/applications/{application}/interview', [\App\Http\Controllers\HR\HRInterviewController::class, 'store'])
+            ->name('applications.interview.store');
+
+        Route::patch('/applications/{application}/interview/complete', [\App\Http\Controllers\HR\HRInterviewController::class, 'complete'])
+            ->name('applications.interview.complete');
+
+        Route::get('/applications/{application}/interview/download-attachment', [\App\Http\Controllers\HR\HRInterviewController::class, 'downloadAttachment'])
+            ->name('applications.interview.download-attachment');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Technical Recruiter (TR) Portal Routes
+|--------------------------------------------------------------------------
+*/
+
+Route::middleware(['auth', 'role:tr,admin'])
+    ->prefix('tr')
+    ->name('tr.')
+    ->group(function () {
+        Route::get('/dashboard', [TRDashboardController::class, 'index'])
+            ->name('dashboard');
+
+        // Candidate Screening & Pipeline
+        Route::get('/applications', [TRApplicationController::class, 'index'])
+            ->name('applications.index');
+
+        Route::get('/applications/{application}', [TRApplicationController::class, 'show'])
+            ->name('applications.show');
+
+        Route::patch('/applications/{application}/status', [TRApplicationController::class, 'updateStatus'])
+            ->name('applications.status');
+
+        // Technical Interviews
+        Route::get('/interviews', [TRInterviewController::class, 'index'])
+            ->name('interviews.index');
+
+        Route::get('/applications/{application}/interview/create', [TRInterviewController::class, 'create'])
+            ->name('applications.interview.create');
+
+        Route::post('/applications/{application}/interview', [TRInterviewController::class, 'store'])
+            ->name('applications.interview.store');
+
+        Route::patch('/applications/{application}/interview/complete', [TRInterviewController::class, 'complete'])
+            ->name('applications.interview.complete');
+
+        Route::get('/applications/{application}/interview/download-attachment', [TRInterviewController::class, 'downloadAttachment'])
+            ->name('applications.interview.download-attachment');
+    });
+
+/*
+|--------------------------------------------------------------------------
+| Admin Portal Routes (Highest Privilege)
 |--------------------------------------------------------------------------
 */
 
@@ -209,6 +319,9 @@ Route::middleware(['auth', 'admin'])
 
         Route::get('/employees/{employee}', [EmployeeController::class, 'show'])
             ->name('employees.show');
+
+        Route::post('/employees/{employee}/role', [EmployeeController::class, 'updateRole'])
+            ->name('employees.role.update');
 
         Route::patch('/employees/{employee}/status', [EmployeeController::class, 'updateStatus'])
             ->name('employees.status');

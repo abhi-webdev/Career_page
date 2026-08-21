@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Employee extends Model
 {
@@ -17,13 +18,10 @@ class Employee extends Model
         'status',
     ];
 
-    protected function casts(): array
-    {
-        return [
-            'joining_date' => 'date',
-            'joined_at' => 'datetime',
-        ];
-    }
+    protected $casts = [
+        'joining_date' => 'date',
+        'joined_at' => 'datetime',
+    ];
 
     public function user(): BelongsTo
     {
@@ -47,6 +45,22 @@ class Employee extends Model
             Offer::class,
             'offer_id'
         );
+    }
+
+    public function roleChangeLogs(): HasMany
+    {
+        return $this->hasMany(
+            RoleChangeLog::class,
+            'employee_id'
+        )->latest();
+    }
+
+    /**
+     * Get the role from the linked User account (Single Source of Truth).
+     */
+    public function getRoleAttribute(): string
+    {
+        return $this->user ? $this->user->role : 'employee';
     }
 
     /**

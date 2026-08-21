@@ -131,88 +131,94 @@
                     @endif
 
                     {{-- ========================================================= --}}
-                    {{-- INTERVIEW CARD SECTION --}}
+                    {{-- MULTI-ROUND INTERVIEW CARDS (HR & TECHNICAL) --}}
                     {{-- ========================================================= --}}
-                    @if($application->interview)
-                        <div class="mt-6 rounded-2xl border border-brand-500/30 bg-white p-5 dark:border-brand-500/30 dark:bg-[#1A1A1A]">
-                            <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                                <div class="flex items-center gap-3">
-                                    <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-brand-500/10 text-lg font-bold text-brand-500">
-                                        📹
-                                    </span>
-                                    <div>
-                                        <h3 class="text-sm font-bold text-[#111111] dark:text-white">
-                                            Interview Assessment Round
-                                        </h3>
-                                        <p class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
-                                            📅 {{ $application->interview->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($application->interview->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($application->interview->end_time)->format('h:i A') }}
-                                        </p>
-                                    </div>
-                                </div>
+                    @php
+                        $interviews = $application->interviews->count() > 0 ? $application->interviews : ($application->interview ? collect([$application->interview]) : collect());
+                    @endphp
 
-                                <div>
-                                    <span class="inline-flex rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider {{ $application->interview->status === 'completed' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : ($application->interview->status === 'cancelled' ? 'bg-red-500/10 text-red-600 dark:text-red-400' : 'bg-brand-500/10 text-brand-500') }}">
-                                        {{ $application->interview->status }}
-                                    </span>
-                                </div>
-                            </div>
+                    @if($interviews->count() > 0)
+                        <div class="mt-6 space-y-4">
+                            @foreach($interviews as $interviewItem)
+                                @php
+                                    $isTech = $interviewItem->type === 'technical';
+                                    $roundTheme = $isTech ? 'border-blue-500/30 bg-white dark:bg-[#1A1A1A] text-blue-600' : 'border-purple-500/30 bg-white dark:bg-[#1A1A1A] text-purple-600';
+                                    $btnTheme = $isTech ? 'bg-blue-600 hover:bg-blue-700' : 'bg-purple-600 hover:bg-purple-700';
+                                    $roundTitle = $isTech ? 'Technical Interview Evaluation' : 'Mandatory HR Interview';
+                                    $roundIcon = $isTech ? '⚡' : '👥';
+                                @endphp
+                                <div class="rounded-2xl border {{ $roundTheme }} p-5 shadow-xs">
+                                    <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                        <div class="flex items-center gap-3">
+                                            <span class="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-lg font-bold">
+                                                {{ $roundIcon }}
+                                            </span>
+                                            <div>
+                                                <h3 class="text-sm font-bold text-[#111111] dark:text-white">
+                                                    {{ $roundTitle }}
+                                                </h3>
+                                                <p class="text-xs text-[#6B6B6B] dark:text-[#A1A1A1]">
+                                                    📅 {{ $interviewItem->interview_date->format('d M Y') }} • {{ \Carbon\Carbon::parse($interviewItem->start_time)->format('h:i A') }} - {{ \Carbon\Carbon::parse($interviewItem->end_time)->format('h:i A') }}
+                                                </p>
+                                            </div>
+                                        </div>
 
-                            @if($application->interview->notes)
-                                <p class="mt-3 text-xs text-[#6B6B6B] dark:text-[#A1A1A1] border-t border-[#E5E5E5] pt-3 dark:border-[#262626]">
-                                    <span class="font-bold text-[#111111] dark:text-white">Interview Instructions:</span> {{ $application->interview->notes }}
-                                </p>
-                            @endif
-
-                            @if($application->interview->status === 'scheduled' && $application->interview->meeting_link)
-                                <div class="mt-4">
-                                    <a
-                                        href="{{ $application->interview->meeting_link }}"
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        class="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-4 py-2 text-xs font-bold text-white shadow-xs transition hover:bg-brand-600"
-                                    >
-                                        <span>📹 Join Google Meet</span>
-                                        <span>↗</span>
-                                    </a>
-                                </div>
-                            @endif
-
-                            {{-- Completed Assessment & Admin Feedback Display --}}
-                            @if($application->interview->status === 'completed')
-                                <div class="mt-4 border-t border-[#E5E5E5] pt-4 dark:border-[#262626] space-y-2">
-                                    <div class="rounded-xl border border-emerald-500/30 bg-emerald-500/10 p-3.5">
-                                        <div class="flex items-center gap-2 text-xs font-bold text-emerald-700 dark:text-emerald-300">
-                                            <span>✓</span>
-                                            <span>Interview round completed</span>
-                                            @if($application->interview->feedback_submitted_at)
-                                                <span class="text-[10px] text-emerald-600 dark:text-emerald-400 font-normal">
-                                                    ({{ $application->interview->feedback_submitted_at->format('d M Y, h:i A') }})
+                                        <div>
+                                            @if($interviewItem->status === 'completed')
+                                                <span class="inline-flex rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider {{ $interviewItem->result === 'passed' ? 'bg-emerald-500/10 text-emerald-600 dark:text-emerald-400' : 'bg-red-500/10 text-red-600 dark:text-red-400' }}">
+                                                    ✓ {{ $interviewItem->result ?? 'Completed' }}
+                                                </span>
+                                            @else
+                                                <span class="inline-flex rounded-full px-3 py-0.5 text-xs font-bold uppercase tracking-wider {{ $interviewItem->status === 'cancelled' ? 'bg-red-500/10 text-red-600' : 'bg-purple-500/10 text-purple-600' }}">
+                                                    {{ $interviewItem->status }}
                                                 </span>
                                             @endif
                                         </div>
-
-                                        @if($application->interview->admin_feedback)
-                                            <p class="mt-2 text-xs text-[#111111] dark:text-white">
-                                                <span class="font-bold">Interviewer Assessment:</span> {{ $application->interview->admin_feedback }}
-                                            </p>
-                                        @endif
-
-                                        @if($application->interview->feedback_attachment_path)
-                                            <div class="mt-2 pt-2 border-t border-emerald-500/20 flex items-center justify-between">
-                                                <span class="text-[11px] font-bold text-emerald-800 dark:text-emerald-300">Evaluation File:</span>
-                                                <a
-                                                    href="{{ asset('storage/' . $application->interview->feedback_attachment_path) }}"
-                                                    target="_blank"
-                                                    class="inline-flex items-center gap-1 text-xs font-bold text-brand-500 hover:underline"
-                                                >
-                                                    <span>View Attachment ↗</span>
-                                                </a>
-                                            </div>
-                                        @endif
                                     </div>
-                                </div>
-                            @endif
 
+                                    @if($interviewItem->notes)
+                                        <p class="mt-3 text-xs text-[#6B6B6B] dark:text-[#A1A1A1] border-t border-[#E5E5E5] pt-3 dark:border-[#262626]">
+                                            <span class="font-bold text-[#111111] dark:text-white">Instructions:</span> {{ $interviewItem->notes }}
+                                        </p>
+                                    @endif
+
+                                    @if($interviewItem->status === 'scheduled' && $interviewItem->meeting_link)
+                                        <div class="mt-4">
+                                            <a
+                                                href="{{ $interviewItem->meeting_link }}"
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                class="inline-flex items-center gap-2 rounded-xl {{ $btnTheme }} px-4 py-2 text-xs font-bold text-white shadow-xs transition"
+                                            >
+                                                <span>📹 Join Google Meet</span>
+                                                <span>↗</span>
+                                            </a>
+                                        </div>
+                                    @endif
+
+                                    {{-- Completed Assessment Note --}}
+                                    @if($interviewItem->status === 'completed')
+                                        <div class="mt-4 border-t border-[#E5E5E5] pt-3 dark:border-[#262626]">
+                                            <div class="rounded-xl {{ $interviewItem->result === 'passed' ? 'border border-emerald-500/30 bg-emerald-500/10' : 'border border-red-500/30 bg-red-500/10' }} p-3">
+                                                <div class="flex items-center gap-2 text-xs font-bold {{ $interviewItem->result === 'passed' ? 'text-emerald-700 dark:text-emerald-300' : 'text-red-700 dark:text-red-300' }}">
+                                                    <span>{{ $interviewItem->result === 'passed' ? '✓ Interview round completed' : '✕ Interview round completed' }}</span>
+                                                    @if($interviewItem->feedback_submitted_at)
+                                                        <span class="text-[10px] opacity-80 font-normal">
+                                                            ({{ $interviewItem->feedback_submitted_at->format('d M Y, h:i A') }})
+                                                        </span>
+                                                    @endif
+                                                </div>
+
+                                                @if($interviewItem->admin_feedback)
+                                                    <p class="mt-1.5 text-xs text-[#111111] dark:text-white">
+                                                        <span class="font-bold">Interviewer Note:</span> {{ $interviewItem->admin_feedback }}
+                                                    </p>
+                                                @endif
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                            @endforeach
                         </div>
                     @endif
 

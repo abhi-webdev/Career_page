@@ -23,7 +23,9 @@ class InterviewController extends Controller
         $application->load([
             'user',
             'job',
-            'interview',
+            'interviews.interviewer',
+            'hrInterview',
+            'technicalInterview',
         ]);
 
         return view(
@@ -33,11 +35,15 @@ class InterviewController extends Controller
     }
 
     /**
-     * Schedule or reschedule interview.
+     * Schedule or reschedule interview (HR or Technical).
      */
     public function store(Request $request, Application $application)
     {
         $validated = $request->validate([
+            'type' => [
+                'nullable',
+                'in:hr,technical',
+            ],
             'interview_date' => [
                 'required',
                 'date',
@@ -71,14 +77,27 @@ class InterviewController extends Controller
             );
         }
 
-        if (!in_array($application->status, ['shortlisted', 'interview'])) {
+        // Determine interview type: explicit or automatically based on current candidate state
+        $type = $validated['type'] ?? ($application->hasHRInterviewPassed() && $application->requiresTechnicalInterview() ? 'technical' : 'hr');
+
+        // Check if candidate is at appropriate stage
+        if ($type === 'hr' && !in_array($application->status, ['shortlisted', 'hr_interview', 'interview'])) {
             return back()->with(
                 'error',
-                'The candidate must be shortlisted before scheduling an interview.'
+                'The candidate must be shortlisted before scheduling an HR interview.'
             );
         }
 
-        $existingInterview = $application->interview;
+        if ($type === 'technical' && !$application->canScheduleTechnicalInterview() && $application->status !== 'technical_interview') {
+            return back()->with(
+                'error',
+                'The candidate must pass the HR interview first and the job must require a technical interview.'
+            );
+        }
+
+        $existingInterview = Interview::where('application_id', $application->id)
+            ->where('type', $type)
+            ->first();
 
         if ($existingInterview && $existingInterview->status === 'completed') {
             return back()->with(
@@ -92,6 +111,7 @@ class InterviewController extends Controller
         $interview = Interview::updateOrCreate(
             [
                 'application_id' => $application->id,
+                'type' => $type,
             ],
             [
                 'interview_date' => $validated['interview_date'],
@@ -100,19 +120,23 @@ class InterviewController extends Controller
                 'meeting_link' => $validated['meeting_link'],
                 'notes' => $validated['notes'] ?? null,
                 'status' => 'scheduled',
+                'result' => 'pending',
+                'interviewer_id' => auth()->id(),
             ]
         );
 
         $application->update([
-            'status' => 'interview',
+            'status' => $type === 'technical' ? 'technical_interview' : 'interview',
         ]);
+
+        $roundLabel = $type === 'technical' ? 'Technical Interview' : 'HR Interview';
 
         $application->user->notify(
             new ApplicationStatusNotification(
-                $isReschedule ? 'Interview Rescheduled' : 'Interview Scheduled',
+                $isReschedule ? "{$roundLabel} Rescheduled" : "{$roundLabel} Scheduled",
                 $isReschedule
-                    ? 'Your interview for ' . $application->job->title . ' has been rescheduled.'
-                    : 'Your interview for ' . $application->job->title . ' has been scheduled.',
+                    ? "Your {$roundLabel} for " . $application->job->title . ' has been rescheduled.'
+                    : "Your {$roundLabel} for " . $application->job->title . ' has been scheduled.',
                 'interview'
             )
         );
@@ -122,14 +146,18 @@ class InterviewController extends Controller
             'application.job',
         ]);
 
-        if ($isReschedule) {
-            Mail::to($application->user->email)->send(
-                new InterviewRescheduled($interview)
-            );
-        } else {
-            Mail::to($application->user->email)->send(
-                new InterviewScheduled($interview)
-            );
+        try {
+            if ($isReschedule) {
+                Mail::to($application->user->email)->send(
+                    new InterviewRescheduled($interview)
+                );
+            } else {
+                Mail::to($application->user->email)->send(
+                    new InterviewScheduled($interview)
+                );
+            }
+        } catch (\Throwable $e) {
+            // Continue if mail driver is offline
         }
 
         return redirect()
@@ -137,8 +165,8 @@ class InterviewController extends Controller
             ->with(
                 'success',
                 $isReschedule
-                    ? 'Interview rescheduled and candidate notified.'
-                    : 'Interview scheduled and candidate notified.'
+                    ? "{$roundLabel} rescheduled and candidate notified."
+                    : "{$roundLabel} scheduled and candidate notified."
             );
     }
 
@@ -172,21 +200,27 @@ class InterviewController extends Controller
             'status' => 'cancelled',
         ]);
 
+        $revertStatus = $interview->type === 'technical' ? 'technical_interview' : 'shortlisted';
+
         $application->update([
-            'status' => 'shortlisted',
+            'status' => $revertStatus,
         ]);
 
         $application->user->notify(
             new ApplicationStatusNotification(
                 'Interview Cancelled',
-                'Your interview for ' . $application->job->title . ' has been cancelled. Your application remains shortlisted.',
+                'Your interview for ' . $application->job->title . ' has been cancelled.',
                 'interview'
             )
         );
 
-        Mail::to($application->user->email)->send(
-            new InterviewCancelled($interview)
-        );
+        try {
+            Mail::to($application->user->email)->send(
+                new InterviewCancelled($interview)
+            );
+        } catch (\Throwable $e) {
+            // Continue if mail driver is offline
+        }
 
         return back()->with(
             'success',
@@ -195,11 +229,41 @@ class InterviewController extends Controller
     }
 
     /**
-     * Mark interview as completed and record Admin feedback notes & optional attachment.
+     * Mark interview as completed, submit feedback, and transition pipeline stage.
      */
     public function complete(Request $request, Application $application)
     {
-        $interview = $application->interview;
+        $validated = $request->validate([
+            'type' => [
+                'nullable',
+                'in:hr,technical',
+            ],
+            'result' => [
+                'nullable',
+                'in:passed,failed',
+            ],
+            'admin_feedback' => [
+                'nullable',
+                'string',
+                'max:5000',
+            ],
+            'feedback_attachment' => [
+                'nullable',
+                'file',
+                'mimes:pdf,doc,docx,png,jpg,jpeg',
+                'max:10240',
+            ],
+        ]);
+
+        $type = $validated['type'] ?? ($application->status === 'technical_interview' ? 'technical' : 'hr');
+        $result = $validated['result'] ?? 'passed';
+
+        $interview = Interview::where('application_id', $application->id)
+            ->where(function ($q) use ($type) {
+                $q->where('type', $type)->orWhere('status', 'scheduled');
+            })
+            ->latest()
+            ->first();
 
         if (!$interview) {
             return back()->with(
@@ -215,20 +279,6 @@ class InterviewController extends Controller
             );
         }
 
-        $validated = $request->validate([
-            'admin_feedback' => [
-                'nullable',
-                'string',
-                'max:5000',
-            ],
-            'feedback_attachment' => [
-                'nullable',
-                'file',
-                'mimes:pdf,doc,docx,png,jpg,jpeg',
-                'max:10240',
-            ],
-        ]);
-
         $attachmentPath = $interview->feedback_attachment_path;
         if ($request->hasFile('feedback_attachment')) {
             $file = $request->file('feedback_attachment');
@@ -239,22 +289,61 @@ class InterviewController extends Controller
 
         $interview->update([
             'status' => 'completed',
+            'result' => $result,
             'admin_feedback' => $validated['admin_feedback'] ?? null,
             'feedback_attachment_path' => $attachmentPath,
             'feedback_submitted_at' => now(),
         ]);
 
-        $application->user->notify(
-            new ApplicationStatusNotification(
-                'Interview Completed',
-                'Your interview for ' . $application->job->title . ' has been completed.',
-                'interview'
-            )
-        );
+        // Recruitment Pipeline Advancement
+        if ($result === 'failed') {
+            $application->update(['status' => 'rejected']);
+
+            $application->user->notify(
+                new ApplicationStatusNotification(
+                    'Application Status Update',
+                    'Thank you for interviewing with us for ' . $application->job->title . '. Unfortunately, we are not moving forward at this time.',
+                    'rejected'
+                )
+            );
+        } else {
+            // Passed Round
+            if ($interview->type === 'hr') {
+                if ($application->requiresTechnicalInterview()) {
+                    $application->update(['status' => 'technical_interview']);
+                    $application->user->notify(
+                        new ApplicationStatusNotification(
+                            'HR Interview Passed',
+                            'Congratulations! You passed the HR interview round for ' . $application->job->title . '. You will be contacted for the technical round.',
+                            'interview'
+                        )
+                    );
+                } else {
+                    $application->update(['status' => 'admin_review']);
+                    $application->user->notify(
+                        new ApplicationStatusNotification(
+                            'HR Interview Passed',
+                            'Congratulations! You passed the HR interview round for ' . $application->job->title . '. Your application is currently under final review.',
+                            'interview'
+                        )
+                    );
+                }
+            } else {
+                // Technical Round Passed
+                $application->update(['status' => 'admin_review']);
+                $application->user->notify(
+                    new ApplicationStatusNotification(
+                        'Technical Interview Passed',
+                        'Congratulations! You passed the technical assessment for ' . $application->job->title . '. Your application is in final review.',
+                        'interview'
+                    )
+                );
+            }
+        }
 
         return back()->with(
             'success',
-            'Interview marked as completed and feedback recorded.'
+            'Interview marked as completed and result recorded.'
         );
     }
 

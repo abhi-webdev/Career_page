@@ -129,6 +129,38 @@
                         class="mt-1.5 w-full rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-4 py-2.5 text-xs text-[#111111] placeholder-[#A1A1A1] outline-none transition focus:border-brand-500 focus:bg-white dark:border-[#262626] dark:bg-[#1A1A1A] dark:text-white"
                     >
                 </div>
+
+                {{-- Technical Interview Required --}}
+                <div class="sm:col-span-2 rounded-xl border border-brand-500/20 bg-brand-500/5 p-4">
+                    <label class="block text-xs font-bold uppercase tracking-wider text-[#111111] dark:text-white mb-1">
+                        Technical Interview Required *
+                    </label>
+                    <p class="text-[11px] text-[#6B6B6B] dark:text-[#A1A1A1] mb-3">
+                        If YES, candidates who pass the mandatory HR interview will advance to the Technical Recruiter (TR) evaluation round. If NO, candidate bypasses technical round directly to Final Review.
+                    </p>
+                    <div class="flex items-center gap-6">
+                        <label class="flex items-center gap-2 text-xs font-bold text-[#111111] dark:text-white cursor-pointer">
+                            <input
+                                type="radio"
+                                name="technical_interview_required"
+                                value="1"
+                                {{ old('technical_interview_required', '1') == '1' ? 'checked' : '' }}
+                                class="accent-brand-500 h-4 w-4"
+                            >
+                            <span>YES — Technical Interview Required</span>
+                        </label>
+                        <label class="flex items-center gap-2 text-xs font-bold text-[#6B6B6B] dark:text-[#A1A1A1] cursor-pointer">
+                            <input
+                                type="radio"
+                                name="technical_interview_required"
+                                value="0"
+                                {{ old('technical_interview_required') == '0' ? 'checked' : '' }}
+                                class="accent-brand-500 h-4 w-4"
+                            >
+                            <span>NO — Skip Technical Round</span>
+                        </label>
+                    </div>
+                </div>
             </div>
         </div>
 

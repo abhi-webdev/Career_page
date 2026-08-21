@@ -152,6 +152,11 @@ class JobController extends Controller
                 'max:100'
             ],
 
+            'technical_interview_required' => [
+                'nullable',
+                'boolean',
+            ],
+
             'apply_url' => [
                 'nullable',
                 'url',
@@ -229,6 +234,8 @@ class JobController extends Controller
 
             'experience' => $validated['experience'] ?? null,
 
+            'technical_interview_required' => $request->has('technical_interview_required') ? (bool) $request->technical_interview_required : true,
+
             'apply_url' => $validated['apply_url'] ?? null,
 
             'application_start' =>
@@ -286,6 +293,11 @@ public function update(Request $request, Job $job)
             'nullable',
             'string',
             'max:100'
+        ],
+
+        'technical_interview_required' => [
+            'nullable',
+            'boolean',
         ],
 
         'apply_url' => [
@@ -364,6 +376,8 @@ public function update(Request $request, Job $job)
         'job_type' => $validated['job_type'] ?? null,
 
         'experience' => $validated['experience'] ?? null,
+
+        'technical_interview_required' => $request->has('technical_interview_required') ? (bool) $request->technical_interview_required : false,
 
         'apply_url' => $validated['apply_url'] ?? null,
 

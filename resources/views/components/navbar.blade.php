@@ -23,7 +23,47 @@
                 </a>
 
                 @auth
-                    @if(auth()->user()->role !== 'admin')
+                    @if(auth()->user()->role === 'admin')
+                        <a
+                            href="{{ route('admin.dashboard') }}"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-600"
+                        >
+                            <span>⚡ Admin ATS</span>
+                        </a>
+                    @elseif(auth()->user()->role === 'hr')
+                        <a
+                            href="{{ route('hr.dashboard') }}"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-purple-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-purple-700"
+                        >
+                            <span>👥 HR Portal</span>
+                        </a>
+                    @elseif(auth()->user()->role === 'tr')
+                        <a
+                            href="{{ route('tr.dashboard') }}"
+                            class="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-blue-700"
+                        >
+                            <span>⚡ TR Portal</span>
+                        </a>
+                    @elseif(auth()->user()->role === 'employee')
+                        <a
+                            href="{{ route('employee.dashboard') }}"
+                            class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('employee.*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
+                        >
+                            Staff Hub
+                        </a>
+                        <a
+                            href="{{ route('offers.current') }}"
+                            class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('offers.*') || request()->routeIs('applications.offer.*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
+                        >
+                            Offer & Docs
+                        </a>
+                        <a
+                            href="{{ route('profile') }}"
+                            class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('profile*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
+                        >
+                            Profile
+                        </a>
+                    @else
                         <a
                             href="{{ route('dashboard') }}"
                             class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('dashboard') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
@@ -50,13 +90,6 @@
                             class="rounded-xl px-3.5 py-2 text-sm font-semibold transition {{ request()->routeIs('profile*') ? 'bg-brand-500/10 text-brand-500 dark:bg-brand-500/20' : 'text-[#6B6B6B] hover:bg-[#F7F7F7] hover:text-[#111111] dark:text-[#A1A1A1] dark:hover:bg-[#141414] dark:hover:text-white' }}"
                         >
                             Profile
-                        </a>
-                    @else
-                        <a
-                            href="{{ route('admin.dashboard') }}"
-                            class="inline-flex items-center gap-1.5 rounded-xl bg-brand-500 px-3.5 py-2 text-sm font-semibold text-white shadow-xs transition hover:bg-brand-600"
-                        >
-                            <span>⚡ Admin ATS</span>
                         </a>
                     @endif
                 @endauth
@@ -152,31 +185,35 @@
                         <div class="flex h-8 w-8 items-center justify-center rounded-xl bg-brand-500/10 font-bold text-brand-500 dark:bg-brand-500/20">
                             {{ strtoupper(substr(auth()->user()->name, 0, 1)) }}
                         </div>
-                        <span class="text-xs font-bold text-[#111111] dark:text-white">
-                            {{ auth()->user()->name }}
-                        </span>
+                        <div>
+                            <span class="text-xs font-bold text-[#111111] dark:text-white block leading-tight">
+                                {{ auth()->user()->name }}
+                            </span>
+                            <span class="text-[10px] font-bold uppercase tracking-wider text-brand-500 block leading-tight">
+                                {{ auth()->user()->role }}
+                            </span>
+                        </div>
                     </div>
 
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button
                             type="submit"
-                            class="rounded-xl border border-[#E5E5E5] bg-[#F7F7F7] px-3 py-1.5 text-xs font-semibold text-[#111111] transition hover:border-red-500 hover:text-red-500 dark:border-[#262626] dark:bg-[#141414] dark:text-white"
+                            title="Log Out"
+                            class="flex h-8 w-8 items-center justify-center rounded-lg text-slate-400 hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400 transition"
                         >
-                            Logout
+                            🚪
                         </button>
                     </form>
                 </div>
-
             @else
-                <div class="hidden sm:flex items-center gap-2 border-l border-[#E5E5E5] pl-3 dark:border-[#262626]">
+                <div class="flex items-center gap-2">
                     <a
                         href="{{ route('login') }}"
-                        class="rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111111] transition hover:text-brand-500 dark:text-white"
+                        class="rounded-xl px-3.5 py-2 text-xs font-semibold text-[#111111] transition hover:bg-[#F7F7F7] dark:text-white dark:hover:bg-[#141414]"
                     >
                         Sign In
                     </a>
-
                     <a
                         href="{{ route('register') }}"
                         class="rounded-xl bg-brand-500 px-4 py-2 text-xs font-semibold text-white shadow-xs transition hover:bg-brand-600"
@@ -209,7 +246,47 @@
             </a>
 
             @auth
-                @if(auth()->user()->role !== 'admin')
+                @if(auth()->user()->role === 'admin')
+                    <a
+                        href="{{ route('admin.dashboard') }}"
+                        class="block rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white"
+                    >
+                        ⚡ Admin ATS Dashboard
+                    </a>
+                @elseif(auth()->user()->role === 'hr')
+                    <a
+                        href="{{ route('hr.dashboard') }}"
+                        class="block rounded-xl bg-purple-600 px-3 py-2 text-sm font-semibold text-white"
+                    >
+                        👥 HR Portal
+                    </a>
+                @elseif(auth()->user()->role === 'tr')
+                    <a
+                        href="{{ route('tr.dashboard') }}"
+                        class="block rounded-xl bg-blue-600 px-3 py-2 text-sm font-semibold text-white"
+                    >
+                        ⚡ TR Portal
+                    </a>
+                @elseif(auth()->user()->role === 'employee')
+                    <a
+                        href="{{ route('employee.dashboard') }}"
+                        class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('employee.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
+                    >
+                        Staff Hub
+                    </a>
+                    <a
+                        href="{{ route('offers.current') }}"
+                        class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('offers.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
+                    >
+                        Offer & Docs
+                    </a>
+                    <a
+                        href="{{ route('profile') }}"
+                        class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('profile*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
+                    >
+                        Profile
+                    </a>
+                @else
                     <a
                         href="{{ route('dashboard') }}"
                         class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('dashboard') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
@@ -226,7 +303,7 @@
 
                     <a
                         href="{{ route('offers.current') }}"
-                        class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('offers.*') || request()->routeIs('applications.offer.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
+                        class="block rounded-xl px-3 py-2 text-sm font-semibold {{ request()->routeIs('offers.*') ? 'bg-brand-500 text-white' : 'text-[#6B6B6B] dark:text-[#A1A1A1]' }}"
                     >
                         Offer
                     </a>
@@ -237,17 +314,10 @@
                     >
                         Profile
                     </a>
-                @else
-                    <a
-                        href="{{ route('admin.dashboard') }}"
-                        class="block rounded-xl bg-brand-500 px-3 py-2 text-sm font-semibold text-white"
-                    >
-                        ⚡ Admin ATS Dashboard
-                    </a>
                 @endif
 
                 <div class="border-t border-[#E5E5E5] pt-3 mt-3 dark:border-[#262626]">
-                    <p class="px-3 text-xs font-bold text-[#111111] dark:text-white mb-2">Signed in as {{ auth()->user()->name }}</p>
+                    <p class="px-3 text-xs font-bold text-[#111111] dark:text-white mb-2">Signed in as {{ auth()->user()->name }} ({{ auth()->user()->role }})</p>
                     <form method="POST" action="{{ route('logout') }}">
                         @csrf
                         <button type="submit" class="w-full rounded-xl border border-red-500/30 bg-red-500/10 px-3 py-2 text-left text-xs font-semibold text-red-600 dark:text-red-400">

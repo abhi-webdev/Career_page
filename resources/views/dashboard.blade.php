@@ -162,9 +162,14 @@
                 @if($upcomingInterview)
                     <div class="mt-5 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between rounded-xl border border-[#E5E5E5] bg-white p-5 dark:border-[#262626] dark:bg-[#1A1A1A]">
                         <div>
-                            <span class="text-xs font-bold text-brand-500">
-                                {{ $upcomingInterview->application->job->company }}
-                            </span>
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs font-bold text-brand-500">
+                                    {{ $upcomingInterview->application->job->company }}
+                                </span>
+                                <span class="rounded-full px-2 py-0.5 text-[10px] font-bold uppercase {{ $upcomingInterview->type === 'technical' ? 'bg-blue-500/10 text-blue-600' : 'bg-purple-500/10 text-purple-600' }}">
+                                    {{ $upcomingInterview->type === 'technical' ? 'Technical Round' : 'HR Round' }}
+                                </span>
+                            </div>
                             <h3 class="text-lg font-bold text-[#111111] dark:text-white mt-0.5">
                                 {{ $upcomingInterview->application->job->title }}
                             </h3>

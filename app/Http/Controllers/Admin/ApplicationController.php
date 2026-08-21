@@ -5,7 +5,6 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Application;
 use Illuminate\Http\Request;
-
 use App\Notifications\ApplicationStatusNotification;
 
 class ApplicationController extends Controller
@@ -18,9 +17,12 @@ class ApplicationController extends Controller
         $query = Application::with([
             'user',
             'job',
-            'interview',
+            'interviews',
+            'hrInterview',
+            'technicalInterview',
             'resume',
-            'offer'
+            'offer',
+            'employee'
         ]);
 
         if ($request->filled('search')) {
@@ -54,9 +56,8 @@ class ApplicationController extends Controller
         );
     }
 
-
     /**
-     * Display a single application.
+     * Display a single application dossier.
      */
     public function show(Application $application)
     {
@@ -64,8 +65,11 @@ class ApplicationController extends Controller
             'user',
             'job',
             'resume',
-            'interview',
-            'offer'
+            'interviews.interviewer',
+            'hrInterview.interviewer',
+            'technicalInterview.interviewer',
+            'offer.versions',
+            'employee'
         ]);
 
         return view(
@@ -74,9 +78,8 @@ class ApplicationController extends Controller
         );
     }
 
-
     /**
-     * Update application status.
+     * Update application status (Shortlist, Final Selection, Rejection).
      */
     public function updateStatus(
         Request $request,
@@ -85,29 +88,17 @@ class ApplicationController extends Controller
         $validated = $request->validate([
             'status' => [
                 'required',
-                'in:pending,shortlisted,interview,selected,rejected',
+                'in:pending,shortlisted,interview,hr_interview,technical_interview,admin_review,selected,rejected',
             ],
         ]);
 
         $oldStatus = $application->status;
         $newStatus = $validated['status'];
 
-        /*
-        |--------------------------------------------------------------------------
-        | Update Application Status
-        |--------------------------------------------------------------------------
-        */
-
         if ($oldStatus !== $newStatus) {
             $application->update([
                 'status' => $newStatus,
             ]);
-
-            /*
-            |--------------------------------------------------------------------------
-            | Notify Candidate When Selected
-            |--------------------------------------------------------------------------
-            */
 
             if ($newStatus === 'selected') {
                 $application->load([
@@ -121,6 +112,14 @@ class ApplicationController extends Controller
                         'Congratulations! You have been selected for ' .
                         $application->job->title . '.',
                         'application'
+                    )
+                );
+            } elseif ($newStatus === 'rejected') {
+                $application->user->notify(
+                    new ApplicationStatusNotification(
+                        'Application Status Update',
+                        'Thank you for your interest in ' . $application->job->title . '. Unfortunately, we are not moving forward at this time.',
+                        'rejected'
                     )
                 );
             }
